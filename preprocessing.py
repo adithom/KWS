@@ -1,6 +1,5 @@
 import os
 import torch
-from sympy.stats.sampling.sample_numpy import numpy
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -20,6 +19,7 @@ class GoogleSpeechDataset(Dataset):
         self.root_dir = str(root_dir)
         self.processor = processor
         self.exclude_files = exclude_files or set()
+        #todo: integrate exclude files from create_dataloaders
         self.label_encoder = LabelEncoder()
         self.max_len = max_len
         self.data, self.labels = self.load_dataset()
