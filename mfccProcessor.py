@@ -30,7 +30,7 @@ class MFCCProcessor:
         if signal is None:
             return None, None
         mfcc = librosa.feature.mfcc(y=signal, sr=sr, n_mfcc=self.n_mfcc)  # Compute MFCCs
-        return mfcc, sr
+        return mfcc
 
     def compute_delta(self, audio_file):
         """Compute the delta of the MFCCs."""
@@ -39,7 +39,7 @@ class MFCCProcessor:
             return None, None
         delta_mfcc = librosa.feature.delta(mfcc, width=self.width)
         mfcc_features = np.concatenate((mfcc, delta_mfcc), axis=0)
-        return mfcc_features, sr
+        return mfcc_features
 
     def compute_delta_delta(self, audio_file):
         """Compute the delta-delta (second-order delta) of the MFCCs."""
@@ -49,4 +49,4 @@ class MFCCProcessor:
         delta_mfcc = librosa.feature.delta(mfcc, width=self.width)
         delta2_mfcc = librosa.feature.delta(mfcc, order=2, width=self.width)
         mfcc_features = np.concatenate((mfcc, delta_mfcc, delta2_mfcc), axis=0)
-        return mfcc_features, sr
+        return mfcc_features

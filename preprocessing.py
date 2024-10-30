@@ -1,13 +1,14 @@
 import os
-import numpy as np
 import torch
+from sympy.stats.sampling.sample_numpy import numpy
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, exclude_files=None):
+    def __init__(self, root_dir, processor, max_len=44, exclude_files=None):
         """
         Initialize the dataset.
 
@@ -16,11 +17,25 @@ class GoogleSpeechDataset(Dataset):
         - processor: MFCCProcessor, The processor to extract MFCC features.
         - exclude_files: set, Files to exclude (e.g., validation or test files).
         """
-        self.root_dir = root_dir
+        self.root_dir = str(root_dir)
         self.processor = processor
         self.exclude_files = exclude_files or set()
         self.label_encoder = LabelEncoder()
+        self.max_len = max_len
         self.data, self.labels = self.load_dataset()
+
+    def pad_or_truncate(self, mfcc):
+        """Pad or truncate the MFCC feature to a fixed length."""
+        # If the MFCC is shorter than max_len, pad with zeros
+        if mfcc.shape[1] < self.max_len:
+            pad_width = self.max_len - mfcc.shape[1]
+            mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
+
+        # If the MFCC is longer than max_len, truncate it
+        elif mfcc.shape[1] > self.max_len:
+            mfcc = mfcc[:, :self.max_len]
+
+        return mfcc
 
     def load_dataset(self):
         """Scan the entire directory, load all .wav files, and extract labels."""
@@ -41,14 +56,16 @@ class GoogleSpeechDataset(Dataset):
                         # Compute MFCC features
                         mfcc = self.processor.compute_mfcc(os.path.join(self.root_dir, relative_path))
                         if mfcc is not None:
+                            mfcc = self.pad_or_truncate(mfcc)
                             features.append(mfcc)
                             labels.append(label)
 
         # Encode string labels to integers
         encoded_labels = self.label_encoder.fit_transform(labels)
+        features_array = np.array(features)
 
         # Convert features and labels to PyTorch tensors
-        features_tensor = torch.tensor(features, dtype=torch.float32)
+        features_tensor = torch.tensor(features_array, dtype=torch.float32)
         labels_tensor = torch.tensor(encoded_labels, dtype=torch.long)
 
         return features_tensor, labels_tensor
@@ -57,10 +74,11 @@ class GoogleSpeechDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        feature = torch.tensor(self.data[idx], dtype=torch.float32)
-        label = torch.tensor(self.labels[idx], dtype=torch.long)
+        """Retrieve the feature and label for the given index."""
+        # Use clone().detach() to safely return a copy without gradients
+        feature = self.data[idx].clone().detach().float()
+        label = self.labels[idx].clone().detach().long()
         return feature, label
-
 
 def load_file_list(file_list_path):
     """Load a list of files from a text file into a set."""
