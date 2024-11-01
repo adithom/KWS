@@ -4,3 +4,4 @@ Cuda Setup:
 
 Extras:
 requirements.txt
+deal with whatever onnx_exportable is

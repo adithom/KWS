@@ -7,7 +7,7 @@ from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=44, exclude_files=None):
+    def __init__(self, root_dir, processor = MFCCProcessor, max_len=44, exclude_files=None, training=False):
         """
         Initialize the dataset.
 
@@ -22,7 +22,34 @@ class GoogleSpeechDataset(Dataset):
         #todo: integrate exclude files from create_dataloaders
         self.label_encoder = LabelEncoder()
         self.max_len = max_len
+        self.training = training
+        
+        # Normalization parameters
+        self.mean = None
+        self.std = None
+        
         self.data, self.labels = self.load_dataset()
+        
+    def compute_normalization_stats(self, features_array):
+        """Compute mean and standard deviation for normalization."""
+        # Compute along all axes except the batch dimension
+        self.mean = np.mean(features_array, axis=(0, 2), keepdims=True)
+        self.std = np.std(features_array, axis=(0, 2), keepdims=True)
+        # Avoid division by zero
+        self.std = np.where(self.std == 0, 1e-6, self.std)
+        return self.mean, self.std
+        
+    def normalize_features(self, features_array):
+        """Normalize features using mean and standard deviation."""
+        if self.mean is None or self.std is None:
+            if self.training:
+                self.compute_normalization_stats(features_array)
+            else:
+                raise ValueError("Normalization parameters not set for non-training dataset")
+        
+        # Apply normalization
+        normalized_features = (features_array - self.mean) / self.std
+        return normalized_features
 
     def pad_or_truncate(self, mfcc):
         """Pad or truncate the MFCC feature to a fixed length."""
@@ -63,9 +90,12 @@ class GoogleSpeechDataset(Dataset):
         # Encode string labels to integers
         encoded_labels = self.label_encoder.fit_transform(labels)
         features_array = np.array(features)
+        if self.training:
+            self.compute_normalization_stats(features_array)
+        normalized_features = self.normalize_features(features_array)
 
         # Convert features and labels to PyTorch tensors
-        features_tensor = torch.tensor(features_array, dtype=torch.float32)
+        features_tensor = torch.tensor(normalized_features, dtype=torch.float32)
         labels_tensor = torch.tensor(encoded_labels, dtype=torch.long)
 
         return features_tensor, labels_tensor
@@ -87,20 +117,26 @@ def load_file_list(file_list_path):
 
 
 def create_dataloaders(root_dir, batch_size=64):
-    """Create DataLoaders for training, validation, and testing datasets."""
-    processor = MFCCProcessor()  # Initialize the MFCC Processor
+    """Create normalized DataLoaders for training, validation, and testing datasets."""
+    processor = MFCCProcessor()
 
-    # Load validation and test files into sets for exclusion
+    # Load file lists
     validation_files = load_file_list('validation_list.txt')
     testing_files = load_file_list('testing_list.txt')
-
-    # Combine validation and test files to exclude them from training
     exclude_files = validation_files | testing_files
 
-    # Create datasets
-    train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files)
-    val_dataset = GoogleSpeechDataset(root_dir, processor, validation_files)
-    test_dataset = GoogleSpeechDataset(root_dir, processor, testing_files)
+    # Create training dataset first to compute normalization parameters
+    train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True)
+
+    # Create validation and test datasets using training set's normalization parameters
+    val_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=validation_files, training=False)
+    test_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=testing_files, training=False)
+
+    # Apply training set's normalization parameters to val and test sets
+    val_dataset.mean = train_dataset.mean
+    val_dataset.std = train_dataset.std
+    test_dataset.mean = train_dataset.mean
+    test_dataset.std = train_dataset.std
 
     # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
