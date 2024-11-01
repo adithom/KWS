@@ -1,3 +1,4 @@
+#Adapted from Microsoft/EdgeML
 import argparse
 import json
 import math
@@ -15,8 +16,10 @@ import random
 
 from torch.autograd import Variable, Function
 
+import utils
 from preprocessing import create_dataloaders
 from training_config import TrainingConfig
+#todo: training config
 from model import *
 
 class KeywordSpotter(nn.Module):
@@ -112,7 +115,7 @@ class KeywordSpotter(nn.Module):
         if lr_scheduler == "TriangleLR":
             steps = lr_peaks * 2 + 1
             stepsize = num_epochs / steps
-            scheduler = TriangularLR(optimizer, stepsize * ticks, lr_min, learning_rate, gamma)
+            scheduler = utils.TriangularLR(optimizer, stepsize * ticks, lr_min, learning_rate, gamma)
         elif lr_scheduler == "CosineAnnealingLR":
             # divide by odd number to finish on the minimum learning rate
             cycles = lr_peaks * 2 + 1
@@ -124,7 +127,7 @@ class KeywordSpotter(nn.Module):
             scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=options.lr_step_size, gamma=gamma)
         elif lr_scheduler == "ExponentialResettingLR":
             reset = (num_epochs * ticks) / 3  # reset at the 1/3 mark.
-            scheduler = ExponentialResettingLR(optimizer, gamma, reset)
+            scheduler = utils.ExponentialResettingLR(optimizer, gamma, reset)
         return scheduler
 
     def fit(self, training_data, validation_data, options, sparsify=False, device=None, detail=False, run=None):

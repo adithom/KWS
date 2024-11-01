@@ -1,5 +1,4 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT license.
+#Adapted from Microsoft/EdgeML
 
 #removed excess but kept the main functions
 
@@ -7,7 +6,7 @@ import os
 import sys
 import torch
 import torch.nn as nn
-import edgeml_pytorch.utils as utils
+import utils
 from rnn import *
 import numpy as np
 

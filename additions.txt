@@ -1,7 +1,16 @@
 Utils:
+crossEntropyLoss +
+hardThreshold +
+copySupport +
+estimateNNZ +
+findCUDA +
+countNNZ +
+supportBasedThreshold +
 
 Cuda Setup:
+idk how yet
 
 Extras:
 requirements.txt
 deal with whatever onnx_exportable is
+config file

@@ -1,11 +1,11 @@
+#Adapted from Microsoft/EdgeML
 import os
 import torch
 import torch.nn as nn
 from torch.autograd import Function
 import numpy as np
 
-import edgeml_pytorch.utils as utils
-#todo: create utils file
+import utils
 
 try:
     if utils.findCUDA() is not None:
