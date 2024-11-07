@@ -14,5 +14,17 @@ Extras:
 requirements.txt +
 deal with whatever onnx_exportable is +
 config file +
-figure out how to ensure data shape consistency
 deal with data cleanliness by ensuring val and test not in train
+
+figure out how to ensure data shape consistency: make sure mfcc length of 44 is appropriate for wide variety of 1 sec files
+
+chatgpt:
+Expected Input Shape:
+RNNs in PyTorch generally expect input shapes of (seq_len, batch_size, input_dim) if batch_first=False, or (batch_size, seq_len, input_dim) if batch_first=True.
+For your data:
+seq_len corresponds to max_len.
+input_dim corresponds to num_mfcc.
+batch_size is the number of samples in each batch.
+Adjustments to Dataset Output Shape:
+
+If your model expects data in (batch_size, seq_len, input_dim), you can reshape the dataset’s output in the __getitem__ method.
