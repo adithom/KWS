@@ -18,8 +18,7 @@ from torch.autograd import Variable, Function
 
 import utils
 from preprocessing import create_dataloaders
-from training_config import TrainingConfig
-#todo: training config
+from trainingConfig import TrainingConfig
 from model import *
 
 class KeywordSpotter(nn.Module):
@@ -562,4 +561,4 @@ if __name__ == '__main__':
     if not os.path.isfile("config.json"):
         config.save("config.json")
 
-    train(config, args.eval, args.outdir, args.detail, azureml)
+    train(config, args.eval, args.outdir, args.detail)

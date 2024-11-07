@@ -79,7 +79,7 @@ def get_model_class(inheritance_class=nn.Module):
 
         def sparsify(self):
             for rnn in self.rnn_list:
-                if self.rnn_name is "FastGRNNCUDA":
+                if self.rnn_name == "FastGRNNCUDA":
                     rnn.to(torch.device("cpu"))
                     rnn.sparsify()
                     rnn.to(torch.device("cuda"))
@@ -88,7 +88,7 @@ def get_model_class(inheritance_class=nn.Module):
 
         def sparsifyWithSupport(self):
             for rnn in self.rnn_list:
-                if self.rnn_name is "FastGRNNCUDA":
+                if self.rnn_name == "FastGRNNCUDA":
                     rnn.to(torch.device("cpu"))
                     rnn.sparsifyWithSupport()
                     rnn.to(torch.device("cuda"))

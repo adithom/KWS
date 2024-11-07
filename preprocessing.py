@@ -7,7 +7,7 @@ from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor = MFCCProcessor, max_len=44, exclude_files=None, training=False):
+    def __init__(self, root_dir, processor, max_len=44, exclude_files=None, training=False):
         """
         Initialize the dataset.
 
@@ -121,8 +121,8 @@ def create_dataloaders(root_dir, batch_size=64):
     processor = MFCCProcessor()
 
     # Load file lists
-    validation_files = load_file_list('validation_list.txt')
-    testing_files = load_file_list('testing_list.txt')
+    validation_files = load_file_list(os.path.join(root_dir, 'validation_list.txt'))
+    testing_files = load_file_list(os.path.join(root_dir, 'testing_list.txt'))
     exclude_files = validation_files | testing_files
 
     # Create training dataset first to compute normalization parameters
