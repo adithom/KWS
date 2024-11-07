@@ -9,6 +9,7 @@ import torch.nn as nn
 import utils
 from rnn import *
 import numpy as np
+import keyboard
 
 
 class FastTrainer:
@@ -344,7 +345,15 @@ class FastTrainer:
         Xtrain = Xtrain.reshape((-1, self.timeSteps, self.inputDims))
         Xtrain = np.swapaxes(Xtrain, 0, 1)
 
+        early_stop_model_path = os.path.join(currDir, "early_stopped_model.pth")
+
         for i in range(0, totalEpochs):
+            if keyboard.is_pressed('q'):
+                print("\nEarly stopping invoked by user. Saving model and stopping training.")
+                torch.save(self.RNN.state_dict(), early_stop_model_path)  # Save model state
+                print(f"Model saved to {early_stop_model_path}")
+                break
+
             print("\nEpoch Number: " + str(i), file=self.outFile)
 
             if i % decayStep == 0 and i != 0:
