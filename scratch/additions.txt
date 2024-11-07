@@ -8,10 +8,11 @@ countNNZ +
 supportBasedThreshold +
 
 Cuda Setup:
-idk how yet
+idk how yet - possibly
 
 Extras:
-requirements.txt
-deal with whatever onnx_exportable is
-config file
+requirements.txt +
+deal with whatever onnx_exportable is +
+config file +
 figure out how to ensure data shape consistency
+deal with data cleanliness by ensuring val and test not in train

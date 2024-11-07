@@ -7,7 +7,7 @@ from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=44, exclude_files=None, training=False):
+    def __init__(self, root_dir, processor, max_len=44, include_files=None, exclude_files=None, training=False):
         """
         Initialize the dataset.
 
@@ -18,6 +18,7 @@ class GoogleSpeechDataset(Dataset):
         """
         self.root_dir = str(root_dir)
         self.processor = processor
+        self.include_files = include_files or set()
         self.exclude_files = exclude_files or set()
         #todo: integrate exclude files from create_dataloaders
         self.label_encoder = LabelEncoder()
@@ -76,16 +77,17 @@ class GoogleSpeechDataset(Dataset):
                     relative_path = os.path.relpath(os.path.join(root, file_name), self.root_dir)
 
                     # Skip if the file is in the excluded list (validation or test set)
-                    if relative_path not in self.exclude_files:
-                        # Extract the label from the directory name
-                        label = relative_path.split(os.sep)[0]
+                    if (self.include_files and relative_path not in self.include_files) or (self.exclude_files and relative_path in self.exclude_files):
+                        continue
+                    # Extract the label from the directory name
+                    label = relative_path.split(os.sep)[0]
 
-                        # Compute MFCC features
-                        mfcc = self.processor.compute_mfcc(os.path.join(self.root_dir, relative_path))
-                        if mfcc is not None:
-                            mfcc = self.pad_or_truncate(mfcc)
-                            features.append(mfcc)
-                            labels.append(label)
+                    # Compute MFCC features
+                    mfcc = self.processor.compute_mfcc(os.path.join(self.root_dir, relative_path))
+                    if mfcc is not None:
+                        mfcc = self.pad_or_truncate(mfcc)
+                        features.append(mfcc)
+                        labels.append(label)
 
         # Encode string labels to integers
         encoded_labels = self.label_encoder.fit_transform(labels)
@@ -129,8 +131,8 @@ def create_dataloaders(root_dir, batch_size=64):
     train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True)
 
     # Create validation and test datasets using training set's normalization parameters
-    val_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=validation_files, training=False)
-    test_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=testing_files, training=False)
+    val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False)
+    test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False)
 
     # Apply training set's normalization parameters to val and test sets
     val_dataset.mean = train_dataset.mean
