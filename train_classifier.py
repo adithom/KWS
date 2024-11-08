@@ -135,11 +135,11 @@ class KeywordSpotter(nn.Module):
         the base class already defines that method with a different meaning.
         The base class "train" method puts the Module into "training mode".
         """
-        print("Training {} using {} rows of featurized training input...".format(self.name(), training_data.num_rows))
+        print("Training {} using {} rows of featurized training input...".format(self.name(), len(training_data.dataset)))
 
-        if training_data.mean is not None:
-            mean = torch.from_numpy(np.array([[training_data.mean]])).to(device)
-            std = torch.from_numpy(np.array([[training_data.std]])).to(device)
+        if training_data.dataset.mean is not None:
+            mean = torch.from_numpy(np.array([[training_data.dataset.mean]])).to(device)
+            std = torch.from_numpy(np.array([[training_data.dataset.std]])).to(device)
         else:
             mean = None
             std = None
@@ -156,7 +156,7 @@ class KeywordSpotter(nn.Module):
         batch_size = options.batch_size
         trim_level = options.trim_level
         
-        ticks = training_data.num_rows / batch_size  # iterations per epoch
+        ticks = len(training_data.dataset) / batch_size  # iterations per epoch
         
         # Calculation of total iterations in non-rolling vs rolling training
         # ticks = num_rows/batch_size (total number of iterations per epoch)
@@ -196,7 +196,7 @@ class KeywordSpotter(nn.Module):
                 rolling_length += 1
                 if rolling_length <= max_rolling_length:
                     self.init_hidden_bag(hidden_bag_size, device)
-            for i_batch, (audio, labels) in enumerate(training_data.get_data_loader(batch_size)):
+            for i_batch, (audio, labels) in enumerate(training_data):
                 if not self.batch_first:
                     audio = audio.transpose(1, 0)  # GRU wants seq,batch,feature
 
@@ -291,7 +291,7 @@ class KeywordSpotter(nn.Module):
         self.zero_grad()
         results = []
         with torch.no_grad():
-            for i_batch, (audio, labels) in enumerate(test_data.get_data_loader(batch_size)):
+            for i_batch, (audio, labels) in enumerate(test_data):
                 batch_size = audio.shape[0]
                 audio = audio.transpose(1, 0)  # GRU wants seq,batch,feature
                 if device:
@@ -335,6 +335,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
 
     # Set up device
     device = torch.device("cuda" if config.training.use_gpu and torch.cuda.is_available() else "cpu")
+    log = []
     
     # Create dataloaders with normalization
     train_loader, val_loader, test_loader = create_dataloaders(
@@ -443,7 +444,6 @@ if __name__ == '__main__':
     parser.add_argument("--config", help="Use json file containing all these options (as per 'training_config.py')")
 
     # and some additional stuff ...
-    parser.add_argument("--azureml", help="Tells script we are running in Azure ML context")
     parser.add_argument("--eval", "-e", help="No training, just evaluate existing model", action='store_true')
     parser.add_argument("--filename", "-o", help="Name of model file to generate")
     parser.add_argument("--categories", "-c", help="Name of file containing keywords")
@@ -456,8 +456,6 @@ if __name__ == '__main__':
     config = TrainingConfig()
     if args.config:
         config.load(args.config)
-
-    azureml = str2bool(args.azureml)
 
     # then any user defined options overrides these defaults
     if args.epochs:

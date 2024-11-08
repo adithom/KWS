@@ -4,10 +4,14 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from mfccProcessor import MFCCProcessor
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc'):
+    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc', mean=None, std=None):
         """
         Initialize the dataset.
 
@@ -28,8 +32,8 @@ class GoogleSpeechDataset(Dataset):
         self.feature_type = feature_type
         
         # Normalization parameters
-        self.mean = None
-        self.std = None
+        self.mean = mean
+        self.std = std
         
         self.data, self.labels = self.load_dataset()
         
@@ -73,6 +77,8 @@ class GoogleSpeechDataset(Dataset):
 
         # Scan the entire directory for .wav files
         for root, _, files in os.walk(self.root_dir):
+            subdirectory = os.path.relpath(root, self.root_dir)
+            logger.info(f"Processing subdirectory: {subdirectory}")
             for file_name in files:
                 if file_name.endswith('.wav'):
                     # Construct the relative file path
@@ -91,12 +97,16 @@ class GoogleSpeechDataset(Dataset):
                         features.append(mfcc)
                         labels.append(label)
 
+        if not features:
+            raise ValueError("No features were extracted. Please check dataset paths and file filtering criteria.")
+
         # Encode string labels to integers
         encoded_labels = self.label_encoder.fit_transform(labels)
         features_array = np.stack(features)
         #todo: stack or array
-        if self.training:
-            self.compute_normalization_stats(features_array)
+        if self.training and self.mean is None and self.std is None:
+            # Compute mean and std if training and not provided
+            self.mean, self.std = self.compute_normalization_stats(features_array)
         normalized_features = self.normalize_features(features_array)
 
         # Convert features and labels to PyTorch tensors
@@ -125,23 +135,31 @@ def create_dataloaders(root_dir, batch_size=64, feature_type='mfcc'):
     """Create normalized DataLoaders for training, validation, and testing datasets."""
     processor = MFCCProcessor()
 
-    # Load file lists
-    validation_files = load_file_list(os.path.join(root_dir, 'validation_list.txt'))
-    testing_files = load_file_list(os.path.join(root_dir, 'testing_list.txt'))
+    try:
+        validation_files = load_file_list(os.path.join(root_dir, 'validation_list.txt'))
+    except FileNotFoundError:
+        print("Warning: validation_list.txt not found. Proceeding without validation files.")
+        validation_files = set()
+
+    try:
+        testing_files = load_file_list(os.path.join(root_dir, 'testing_list.txt'))
+    except FileNotFoundError:
+        print("Warning: testing_list.txt not found. Proceeding without testing files.")
+        testing_files = set()
     exclude_files = validation_files | testing_files
 
     # Create training dataset first to compute normalization parameters
     train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True, feature_type=feature_type)
 
-    # Create validation and test datasets using training set's normalization parameters
-    val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False, feature_type=feature_type)
-    test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False, feature_type=feature_type)
+    if train_dataset.mean is None or train_dataset.std is None:
+        raise ValueError(
+            "Failed to compute mean and std for training dataset. Check the data and feature extraction pipeline.")
+
+    print(f"Training mean: {train_dataset.mean}, Training std: {train_dataset.std}")
 
     # Apply training set's normalization parameters to val and test sets
-    val_dataset.mean = train_dataset.mean
-    val_dataset.std = train_dataset.std
-    test_dataset.mean = train_dataset.mean
-    test_dataset.std = train_dataset.std
+    val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False, feature_type=feature_type,mean=train_dataset.mean, std=train_dataset.std)
+    test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False, feature_type=feature_type, mean=train_dataset.mean, std=train_dataset.std)
 
     # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)

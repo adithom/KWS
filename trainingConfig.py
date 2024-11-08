@@ -10,7 +10,7 @@ class ModelOptions:
     def __init__(self):
         self.architecture = "FastGRNN"
         self.num_layers = 1
-        self.hidden_units = None
+        self.hidden_units = 128
         self.hidden_units1 = None
         self.hidden_units2 = None
         self.hidden_units3 = None

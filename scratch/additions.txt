@@ -1,11 +1,5 @@
-Utils:
-crossEntropyLoss +
-hardThreshold +
-copySupport +
-estimateNNZ +
-findCUDA +
-countNNZ +
-supportBasedThreshold +
+Goal:
+python train_classifier.py --dataset ./google_speech --epochs 30 --batch_size 64 --outdir ./scratch
 
 Cuda Setup:
 idk how yet - possibly
@@ -16,7 +10,7 @@ deal with whatever onnx_exportable is +
 config file +
 deal with data cleanliness by ensuring val and test not in train
 
-figure out how to ensure data shape consistency: make sure mfcc length of 44 is appropriate for wide variety of 1 sec files
+figure out how to ensure data shape consistency:
 
 chatgpt:
 Expected Input Shape:

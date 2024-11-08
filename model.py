@@ -6,7 +6,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import sys
-from rnn import *
+from rnn import FastGRNN, FastGRNNCUDA
+
+def get_rnn_class(rnn_name):
+    """Return the RNN class based on rnn_name."""
+    rnn_classes = {
+        'FastGRNN': FastGRNN,
+        'FastGRNNCUDA': FastGRNNCUDA
+    }
+    if rnn_name in rnn_classes:
+        return rnn_classes[rnn_name]
+    else:
+        raise ValueError(f"RNN class '{rnn_name}' not recognized. Available classes: {list(rnn_classes.keys())}")
 
 def get_model_class(inheritance_class=nn.Module):
     class RNNClassifierModel(inheritance_class):
@@ -46,7 +57,7 @@ def get_model_class(inheritance_class=nn.Module):
 
             super(RNNClassifierModel, self).__init__()
 
-            RNN = getattr(getattr(getattr(__import__('edgeml_pytorch'), 'graph'), 'rnn'), rnn_name)
+            RNN = get_rnn_class(rnn_name)
             self.rnn_list = nn.ModuleList([
                 RNN(self.input_dim if l==0 else self.hidden_units_list[l-1], 
                             self.hidden_units_list[l], 
