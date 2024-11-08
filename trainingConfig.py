@@ -30,7 +30,7 @@ class ModelOptions:
 class DatasetOptions:
     def __init__(self):
         self.name = "speechcommandsv02"
-        self.featurizer = "featurizer_mel_16000_512_512_80_40_log"
+        self.feature_type = 'mfcc'
         self.categories = "categories.txt"
         self.path = ""
         self.auto_scale = False

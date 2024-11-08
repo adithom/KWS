@@ -15,6 +15,7 @@ std = dataset.std
 
 
 # Print dataset length
+print(f'Dataset shape: {dataset.data.shape}')
 print(f'Total samples: {len(dataset)}')
 
 # Access the first sample

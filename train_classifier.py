@@ -339,7 +339,8 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
     # Create dataloaders with normalization
     train_loader, val_loader, test_loader = create_dataloaders(
         config.dataset.path,
-        batch_size=config.training.batch_size
+        batch_size=config.training.batch_size,
+        feature_type = config.dataset.feature_type
     )
 
     # Save normalization parameters

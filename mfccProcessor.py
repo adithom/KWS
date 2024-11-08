@@ -19,7 +19,17 @@ class MFCCProcessor:
         self.n_fft = int(winlen * sample_rate)  # Number of samples per window
         self.hop_length = int(winstep * sample_rate)
 
-    #@staticmethod
+    def compute_features(self, audio_file, feature_type='mfcc'):
+        """Compute features based on the specified type."""
+        if feature_type == 'mfcc':
+            return self.compute_mfcc(audio_file)
+        elif feature_type == 'delta':
+            return self.compute_delta(audio_file)
+        elif feature_type == 'delta_delta':
+            return self.compute_delta_delta(audio_file)
+        else:
+            raise ValueError(f"Unknown feature type: {feature_type}")
+
     def load_audio(self, audio_file):
         """Load an audio file."""
         try:

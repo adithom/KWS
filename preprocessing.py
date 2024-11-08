@@ -7,7 +7,7 @@ from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False):
+    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc'):
         """
         Initialize the dataset.
 
@@ -25,6 +25,7 @@ class GoogleSpeechDataset(Dataset):
         self.label_encoder = LabelEncoder()
         self.max_len = max_len
         self.training = training
+        self.feature_type = feature_type
         
         # Normalization parameters
         self.mean = None
@@ -84,7 +85,7 @@ class GoogleSpeechDataset(Dataset):
                     label = relative_path.split(os.sep)[0]
 
                     # Compute MFCC features
-                    mfcc = self.processor.compute_delta_delta(os.path.join(self.root_dir, relative_path))
+                    mfcc = self.processor.compute_features(os.path.join(self.root_dir, relative_path),self.feature_type)
                     if mfcc is not None:
                         mfcc = self.pad_or_truncate(mfcc)
                         features.append(mfcc)
@@ -120,7 +121,7 @@ def load_file_list(file_list_path):
         return set(line.strip() for line in f)
 
 
-def create_dataloaders(root_dir, batch_size=64):
+def create_dataloaders(root_dir, batch_size=64, feature_type='mfcc'):
     """Create normalized DataLoaders for training, validation, and testing datasets."""
     processor = MFCCProcessor()
 
@@ -130,11 +131,11 @@ def create_dataloaders(root_dir, batch_size=64):
     exclude_files = validation_files | testing_files
 
     # Create training dataset first to compute normalization parameters
-    train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True)
+    train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True, feature_type=feature_type)
 
     # Create validation and test datasets using training set's normalization parameters
-    val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False)
-    test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False)
+    val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False, feature_type=feature_type)
+    test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False, feature_type=feature_type)
 
     # Apply training set's normalization parameters to val and test sets
     val_dataset.mean = train_dataset.mean
