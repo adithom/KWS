@@ -7,7 +7,7 @@ from mfccProcessor import MFCCProcessor
 
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=44, include_files=None, exclude_files=None, training=False):
+    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False):
         """
         Initialize the dataset.
 
@@ -15,6 +15,7 @@ class GoogleSpeechDataset(Dataset):
         - root_dir: str, Path to the dataset root directory.
         - processor: MFCCProcessor, The processor to extract MFCC features.
         - exclude_files: set, Files to exclude (e.g., validation or test files).
+        - max_len: int, Maximum length of the MFCC features. Decided based on expected_num_frames = 1 + (sample_rate - n_fft) // hop_length
         """
         self.root_dir = str(root_dir)
         self.processor = processor
@@ -83,7 +84,7 @@ class GoogleSpeechDataset(Dataset):
                     label = relative_path.split(os.sep)[0]
 
                     # Compute MFCC features
-                    mfcc = self.processor.compute_mfcc(os.path.join(self.root_dir, relative_path))
+                    mfcc = self.processor.compute_delta_delta(os.path.join(self.root_dir, relative_path))
                     if mfcc is not None:
                         mfcc = self.pad_or_truncate(mfcc)
                         features.append(mfcc)
@@ -91,7 +92,8 @@ class GoogleSpeechDataset(Dataset):
 
         # Encode string labels to integers
         encoded_labels = self.label_encoder.fit_transform(labels)
-        features_array = np.array(features)
+        features_array = np.stack(features)
+        #todo: stack or array
         if self.training:
             self.compute_normalization_stats(features_array)
         normalized_features = self.normalize_features(features_array)

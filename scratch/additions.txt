@@ -28,3 +28,10 @@ batch_size is the number of samples in each batch.
 Adjustments to Dataset Output Shape:
 
 If your model expects data in (batch_size, seq_len, input_dim), you can reshape the dataset’s output in the __getitem__ method.
+
+1. try training fastgrnn with mfcc
+2. try training fastgrnn with mfcc and delta
+3. try training fastgrnn with mfcc and delta and delta-delta - compare model sizes and accuracy
+
+4. create python file that processes live audio input
+5. configure pipeline of live audio input to fastgrnn model
