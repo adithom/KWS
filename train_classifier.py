@@ -446,7 +446,7 @@ if __name__ == '__main__':
     # and some additional stuff ...
     parser.add_argument("--eval", "-e", help="No training, just evaluate existing model", action='store_true')
     parser.add_argument("--filename", "-o", help="Name of model file to generate")
-    parser.add_argument("--categories", "-c", help="Name of file containing keywords")
+    parser.add_argument("--feature-type", "-ft", type=str, help="Define the feature type to use for MFCC extraction")
     parser.add_argument("--dataset", "-a", help="Path to the audio folder containing 'training.npz' file")
     parser.add_argument("--outdir", help="Folder in which to store output file and log files")
     parser.add_argument("--detail", "-d", help="Save loss info for every iteration not just every epoch",
@@ -505,8 +505,8 @@ if __name__ == '__main__':
         config.training.use_gpu = args.use_gpu
     if args.normalize:
         config.dataset.normalize = args.normalize
-    if args.categories:
-        config.dataset.categories = args.categories
+    if args.feature_type:
+        config.dataset.feature_type = args.feature_type
     if args.dataset:
         config.dataset.path = args.dataset
     if args.sample_non_kw:
