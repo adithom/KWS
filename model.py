@@ -164,8 +164,8 @@ def get_model_class(inheritance_class=nn.Module):
         def forward(self, input):
             """ Perform the forward processing of the given input and return the prediction """
             # input is shape: [seq,batch,feature]
-            if self.mean is not None:
-                input = (input - self.mean) / self.std
+            # if self.mean is not None:
+            #     input = (input - self.mean) / self.std
 
             rnn_in = input
             if self.rnn_name == "FastGRNNCUDA":
