@@ -198,7 +198,7 @@ class KeywordSpotter(nn.Module):
                     self.init_hidden_bag(hidden_bag_size, device)
             for i_batch, (audio, labels) in enumerate(training_data):
                 if not self.batch_first:
-                    audio = audio.transpose(1, 0)  # GRU wants seq,batch,feature
+                    audio = audio.permute(2, 0, 1)  # GRU wants seq,batch,feature
 
                 if device:
                     self.move_to(device)
@@ -293,7 +293,7 @@ class KeywordSpotter(nn.Module):
         with torch.no_grad():
             for i_batch, (audio, labels) in enumerate(test_data):
                 batch_size = audio.shape[0]
-                audio = audio.transpose(1, 0)  # GRU wants seq,batch,feature
+                audio = audio.permute(2, 0, 1)  # GRU wants seq,batch,feature
                 if device:
                     audio = audio.to(device)
                     labels = labels.to(device)
@@ -350,7 +350,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
         np.save(os.path.join(outdir, "std.npy"), train_loader.dataset.std)
 
     # Create and initialize model
-    input_size = train_loader.dataset.data.shape[2]  # MFCC feature dimension
+    input_size = train_loader.dataset.data.shape[1]  # MFCC feature dimension
     num_classes = len(train_loader.dataset.label_encoder.classes_)
     model = create_model(config.model, input_size, num_classes)
     model.to(device)
