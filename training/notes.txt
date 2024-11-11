@@ -1,0 +1,265 @@
+Training is extremely slow, GPU utilization is low.
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.120                Driver Version: 550.120        CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX A4000               Off |   00000000:05:00.0 Off |                  Off |
+| 41%   56C    P2             38W /  140W |     267MiB /  16376MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      1740      C   python                                        260MiB |
++-----------------------------------------------------------------------------------------+
+
+  from pandas.core import (
+2024-11-11 11:38:49,141 - INFO - Processing subdirectory: .
+2024-11-11 11:38:49,146 - INFO - Processing subdirectory: stop
+2024-11-11 11:39:08,194 - INFO - Processing subdirectory: wow
+2024-11-11 11:39:17,258 - INFO - Processing subdirectory: follow
+2024-11-11 11:39:23,984 - INFO - Processing subdirectory: three
+2024-11-11 11:39:39,636 - INFO - Processing subdirectory: happy
+2024-11-11 11:39:48,237 - INFO - Processing subdirectory: tree
+2024-11-11 11:39:55,717 - INFO - Processing subdirectory: sheila
+2024-11-11 11:40:04,324 - INFO - Processing subdirectory: backward
+2024-11-11 11:40:11,211 - INFO - Processing subdirectory: seven
+2024-11-11 11:40:27,527 - INFO - Processing subdirectory: visual
+2024-11-11 11:40:34,132 - INFO - Processing subdirectory: go
+2024-11-11 11:40:50,060 - INFO - Processing subdirectory: bed
+2024-11-11 11:40:58,194 - INFO - Processing subdirectory: learn
+2024-11-11 11:41:04,770 - INFO - Processing subdirectory: one
+2024-11-11 11:41:20,591 - INFO - Processing subdirectory: up
+2024-11-11 11:41:36,504 - INFO - Processing subdirectory: down
+2024-11-11 11:41:52,564 - INFO - Processing subdirectory: zero
+2024-11-11 11:42:09,299 - INFO - Processing subdirectory: four
+2024-11-11 11:42:24,502 - INFO - Processing subdirectory: marvin
+2024-11-11 11:42:33,435 - INFO - Processing subdirectory: right
+2024-11-11 11:42:48,898 - INFO - Processing subdirectory: five
+2024-11-11 11:43:05,326 - INFO - Processing subdirectory: no
+2024-11-11 11:43:21,472 - INFO - Processing subdirectory: eight
+2024-11-11 11:43:37,098 - INFO - Processing subdirectory: nine
+2024-11-11 11:43:53,836 - INFO - Processing subdirectory: bird
+2024-11-11 11:44:02,776 - INFO - Processing subdirectory: six
+2024-11-11 11:44:18,575 - INFO - Processing subdirectory: _background_noise_
+2024-11-11 11:44:19,185 - INFO - Processing subdirectory: forward
+2024-11-11 11:44:25,908 - INFO - Processing subdirectory: left
+2024-11-11 11:44:41,872 - INFO - Processing subdirectory: two
+2024-11-11 11:44:58,080 - INFO - Processing subdirectory: house
+2024-11-11 11:45:07,065 - INFO - Processing subdirectory: on
+2024-11-11 11:45:23,329 - INFO - Processing subdirectory: dog
+2024-11-11 11:45:32,305 - INFO - Processing subdirectory: yes
+2024-11-11 11:45:49,384 - INFO - Processing subdirectory: off
+2024-11-11 11:46:05,487 - INFO - Processing subdirectory: cat
+Training mean: [[[-5.5571631e+02]
+  [ 8.1656067e+01]
+  [ 2.5433316e+00]
+  [ 1.6811174e+01]
+  [-3.5934613e+00]
+  [ 3.1941307e+00]
+  [-4.8262172e+00]
+  [ 6.3297078e-02]
+  [-4.0005260e+00]
+  [ 2.8391737e-01]
+  [-5.4488854e+00]
+  [-3.9968070e-02]
+  [-4.5697818e+00]
+  [ 2.0099394e-01]
+  [-5.1234722e+00]
+  [-1.0447859e+00]
+  [-4.0930333e+00]
+  [-1.2641639e+00]
+  [-4.8091512e+00]
+  [-1.2915299e+00]]], Training std: [[[182.91655  ]
+  [ 71.60715  ]
+  [ 37.680454 ]
+  [ 30.771692 ]
+  [ 26.78797  ]
+  [ 20.514683 ]
+  [ 19.17874  ]
+  [ 17.337603 ]
+  [ 14.84073  ]
+  [ 14.535673 ]
+  [ 13.335385 ]
+  [ 12.541571 ]
+  [ 11.847653 ]
+  [ 11.367537 ]
+  [ 10.975438 ]
+  [ 10.4154005]
+  [  9.787573 ]
+  [  9.459267 ]
+  [  9.362697 ]
+  [  8.945507 ]]]
+2024-11-11 11:46:21,966 - INFO - Processing subdirectory: .
+2024-11-11 11:46:21,971 - INFO - Processing subdirectory: stop
+2024-11-11 11:46:23,931 - INFO - Processing subdirectory: wow
+2024-11-11 11:46:24,997 - INFO - Processing subdirectory: follow
+2024-11-11 11:46:25,724 - INFO - Processing subdirectory: three
+2024-11-11 11:46:27,650 - INFO - Processing subdirectory: happy
+2024-11-11 11:46:28,907 - INFO - Processing subdirectory: tree
+2024-11-11 11:46:29,773 - INFO - Processing subdirectory: sheila
+2024-11-11 11:46:30,886 - INFO - Processing subdirectory: backward
+2024-11-11 11:46:31,754 - INFO - Processing subdirectory: seven
+2024-11-11 11:46:33,888 - INFO - Processing subdirectory: visual
+2024-11-11 11:46:34,634 - INFO - Processing subdirectory: go
+2024-11-11 11:46:36,613 - INFO - Processing subdirectory: bed
+2024-11-11 11:46:37,888 - INFO - Processing subdirectory: learn
+2024-11-11 11:46:38,667 - INFO - Processing subdirectory: one
+2024-11-11 11:46:40,576 - INFO - Processing subdirectory: up
+2024-11-11 11:46:42,469 - INFO - Processing subdirectory: down
+2024-11-11 11:46:44,497 - INFO - Processing subdirectory: zero
+2024-11-11 11:46:46,529 - INFO - Processing subdirectory: four
+2024-11-11 11:46:48,502 - INFO - Processing subdirectory: marvin
+2024-11-11 11:46:49,565 - INFO - Processing subdirectory: right
+2024-11-11 11:46:51,490 - INFO - Processing subdirectory: five
+2024-11-11 11:46:53,508 - INFO - Processing subdirectory: no
+2024-11-11 11:46:55,699 - INFO - Processing subdirectory: eight
+2024-11-11 11:46:57,516 - INFO - Processing subdirectory: nine
+2024-11-11 11:46:59,424 - INFO - Processing subdirectory: bird
+2024-11-11 11:47:00,463 - INFO - Processing subdirectory: six
+2024-11-11 11:47:02,557 - INFO - Processing subdirectory: _background_noise_
+2024-11-11 11:47:02,560 - INFO - Processing subdirectory: forward
+2024-11-11 11:47:03,358 - INFO - Processing subdirectory: left
+2024-11-11 11:47:05,331 - INFO - Processing subdirectory: two
+2024-11-11 11:47:07,186 - INFO - Processing subdirectory: house
+2024-11-11 11:47:08,312 - INFO - Processing subdirectory: on
+2024-11-11 11:47:10,299 - INFO - Processing subdirectory: dog
+2024-11-11 11:47:11,330 - INFO - Processing subdirectory: yes
+2024-11-11 11:47:13,432 - INFO - Processing subdirectory: off
+2024-11-11 11:47:15,382 - INFO - Processing subdirectory: cat
+2024-11-11 11:47:16,996 - INFO - Processing subdirectory: .
+2024-11-11 11:47:17,001 - INFO - Processing subdirectory: stop
+2024-11-11 11:47:19,215 - INFO - Processing subdirectory: wow
+2024-11-11 11:47:20,331 - INFO - Processing subdirectory: follow
+2024-11-11 11:47:21,236 - INFO - Processing subdirectory: three
+2024-11-11 11:47:23,437 - INFO - Processing subdirectory: happy
+2024-11-11 11:47:24,484 - INFO - Processing subdirectory: tree
+2024-11-11 11:47:25,469 - INFO - Processing subdirectory: sheila
+2024-11-11 11:47:26,591 - INFO - Processing subdirectory: backward
+2024-11-11 11:47:27,445 - INFO - Processing subdirectory: seven
+2024-11-11 11:47:29,632 - INFO - Processing subdirectory: visual
+2024-11-11 11:47:30,483 - INFO - Processing subdirectory: go
+2024-11-11 11:47:32,560 - INFO - Processing subdirectory: bed
+2024-11-11 11:47:33,694 - INFO - Processing subdirectory: learn
+2024-11-11 11:47:34,531 - INFO - Processing subdirectory: one
+2024-11-11 11:47:36,635 - INFO - Processing subdirectory: up
+2024-11-11 11:47:38,981 - INFO - Processing subdirectory: down
+2024-11-11 11:47:41,095 - INFO - Processing subdirectory: zero
+2024-11-11 11:47:43,413 - INFO - Processing subdirectory: four
+2024-11-11 11:47:45,544 - INFO - Processing subdirectory: marvin
+2024-11-11 11:47:46,589 - INFO - Processing subdirectory: right
+2024-11-11 11:47:48,759 - INFO - Processing subdirectory: five
+2024-11-11 11:47:51,139 - INFO - Processing subdirectory: no
+2024-11-11 11:47:53,377 - INFO - Processing subdirectory: eight
+2024-11-11 11:47:55,583 - INFO - Processing subdirectory: nine
+2024-11-11 11:47:57,663 - INFO - Processing subdirectory: bird
+2024-11-11 11:47:58,647 - INFO - Processing subdirectory: six
+2024-11-11 11:48:00,770 - INFO - Processing subdirectory: _background_noise_
+2024-11-11 11:48:00,773 - INFO - Processing subdirectory: forward
+2024-11-11 11:48:01,562 - INFO - Processing subdirectory: left
+2024-11-11 11:48:03,910 - INFO - Processing subdirectory: two
+2024-11-11 11:48:06,398 - INFO - Processing subdirectory: house
+2024-11-11 11:48:07,377 - INFO - Processing subdirectory: on
+2024-11-11 11:48:09,462 - INFO - Processing subdirectory: dog
+2024-11-11 11:48:10,635 - INFO - Processing subdirectory: yes
+2024-11-11 11:48:12,785 - INFO - Processing subdirectory: off
+2024-11-11 11:48:14,941 - INFO - Processing subdirectory: cat
+sigmoid tanh
+Training 1 layer FastGRNN using 84849 rows of featurized training input...
+SGD (
+Parameter Group 0
+    dampening: 0
+    differentiable: False
+    foreach: None
+    fused: None
+    lr: 0.01
+    maximize: False
+    momentum: 0.9
+    nesterov: True
+    weight_decay: 1e-05
+)
+Epoch 0, Loss 1.773, Validation Accuracy 2.595, Learning Rate 0.01
+Epoch 1, Loss 1.018, Validation Accuracy 1.874, Learning Rate 0.01
+Epoch 2, Loss 0.795, Validation Accuracy 1.994, Learning Rate 0.01
+Epoch 3, Loss 0.490, Validation Accuracy 1.783, Learning Rate 0.01
+Epoch 4, Loss 0.475, Validation Accuracy 1.513, Learning Rate 0.01
+Epoch 5, Loss 0.572, Validation Accuracy 1.212, Learning Rate 0.01
+Epoch 6, Loss 0.475, Validation Accuracy 1.423, Learning Rate 0.01
+Epoch 7, Loss 0.230, Validation Accuracy 0.942, Learning Rate 0.01
+Epoch 8, Loss 0.668, Validation Accuracy 0.912, Learning Rate 0.01
+Epoch 9, Loss 0.500, Validation Accuracy 1.062, Learning Rate 0.01
+Epoch 10, Loss 0.373, Validation Accuracy 1.002, Learning Rate 0.01
+Epoch 11, Loss 0.454, Validation Accuracy 1.132, Learning Rate 0.01
+Epoch 12, Loss 0.418, Validation Accuracy 0.902, Learning Rate 0.01
+qEpoch 13, Loss 0.305, Validation Accuracy 1.032, Learning Rate 0.01
+Epoch 14, Loss 0.208, Validation Accuracy 0.982, Learning Rate 0.01
+Epoch 15, Loss 0.263, Validation Accuracy 0.952, Learning Rate 0.01
+Epoch 16, Loss 0.342, Validation Accuracy 1.032, Learning Rate 0.01
+Epoch 17, Loss 0.257, Validation Accuracy 0.862, Learning Rate 0.01
+Epoch 18, Loss 0.476, Validation Accuracy 0.792, Learning Rate 0.01
+Epoch 19, Loss 0.362, Validation Accuracy 1.062, Learning Rate 0.01
+Epoch 20, Loss 0.335, Validation Accuracy 1.082, Learning Rate 0.01
+Epoch 21, Loss 0.325, Validation Accuracy 0.882, Learning Rate 0.01
+Epoch 22, Loss 0.329, Validation Accuracy 0.912, Learning Rate 0.01
+Epoch 23, Loss 0.303, Validation Accuracy 0.992, Learning Rate 0.01
+Epoch 24, Loss 0.295, Validation Accuracy 1.032, Learning Rate 0.01
+Epoch 25, Loss 0.420, Validation Accuracy 1.092, Learning Rate 0.01
+Epoch 26, Loss 0.089, Validation Accuracy 1.453, Learning Rate 0.01
+Epoch 27, Loss 0.101, Validation Accuracy 0.942, Learning Rate 0.01
+Epoch 28, Loss 0.151, Validation Accuracy 0.982, Learning Rate 0.01
+Epoch 29, Loss 0.443, Validation Accuracy 1.042, Learning Rate 0.01
+Trained in 9681.43 seconds
+FastGRNN
+Model size 95248
+Traceback (most recent call last):
+  File "/home/user/KWS/train_classifier.py", line 564, in <module>
+    train(config, args.eval, args.outdir, args.detail)
+  File "/home/user/KWS/train_classifier.py", line 374, in train
+    accuracy = model.evaluate(test_loader, device)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/KWS/train_classifier.py", line 302, in evaluate
+    keyword_scores = self(audio)
+                     ^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/KWS/model.py", line 193, in forward
+    model_output = rnn(rnn_in, hiddenState=self.hidden_states[l])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/KWS/rnn.py", line 560, in forward
+    return self.unrollRNN(input, hiddenState, cellState)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/KWS/rnn.py", line 517, in forward
+    hiddenState[0] = self.RNNCell(input[i, :, :], hiddenState[0].clone())
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/mambaforge/envs/env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/KWS/rnn.py", line 274, in forward
+    wComp = torch.matmul(input, self.W)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument mat2 in method wrapper_CUDA_mm)

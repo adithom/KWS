@@ -1,1 +1,4 @@
 /google_speech
+/cuda/build
+/cuda/dist
+/cuda/fastgrnn_cuda.egg-info

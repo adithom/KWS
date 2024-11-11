@@ -4,7 +4,7 @@ Adapted from https://github.com/microsoft/EdgeML/
 
 Paper: https://arxiv.org/pdf/1901.02358
 
-Changes made: MFCC Processor, KeywordSpotter class in train_classifier.py, CTC Loss (adapted from Pytorch source code), data pipeline, removed redundancies
+Changes made: MFCC Processor, KeywordSpotter class in train_classifier.py, CTC Loss (adapted from Pytorch source code), data pipeline, removed redundancies, updated deprecated pytorch
 
 ### Instructions
 
@@ -22,7 +22,7 @@ Install requirements.txt (and ensure dependency compatibility(#todo))
 pip install -r requirements.txt
 ```
 
-Install setup.py
+Install CUDA kernel
 ```
 cd cuda
 python setup.py install
@@ -32,3 +32,5 @@ Run Model
 ```
 python train_classifier.py --dataset ./google_speech --epochs 30 --batch_size 64 --outdir OUTPUT_DIRECTORY --use_gpu
 ```
+
+Adjust parameters in the TrainingConfig.py file to control various aspects of training
