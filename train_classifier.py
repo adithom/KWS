@@ -261,7 +261,7 @@ class KeywordSpotter(nn.Module):
                     learning_rate = optimizer.param_groups[0]['lr']
                     log += [{'iteration': iteration, 'loss': loss.item(), 'learning_rate': learning_rate}]
             # Find the best prediction in each sequence and return it's accuracy
-            passed, total, rate = self.evaluate(validation_data, batch_size, device)
+            rate = self.evaluate(validation_data, batch_size, device)
             learning_rate = optimizer.param_groups[0]['lr']
             current_loss = float(loss.item())
             print("Epoch {}, Loss {:.3f}, Validation Accuracy {:.3f}, Learning Rate {}".format(
@@ -309,7 +309,8 @@ class KeywordSpotter(nn.Module):
             with open(outfile, "w") as f:
                 json.dump(results, f)
 
-        return (passed, total, passed / total)
+        overall_accuracy = passed / total
+        return overall_accuracy
 
 def create_model(model_config, input_size, num_keywords):
     ModelClass = get_model_class(KeywordSpotter)
