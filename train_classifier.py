@@ -50,13 +50,15 @@ class KeywordSpotter(nn.Module):
 
     def export(self, name, device):
         """ Export the model to the ONNX file format """
-        self.init_hidden()
-        self.tracking = True
-        dummy_input = Variable(torch.randn(1, 1, self.input_dim))
-        if device:
-            dummy_input = dummy_input.to(device)
-        torch.onnx.export(self, dummy_input, name, verbose=True)
-        self.tracking = False
+        # self.init_hidden()
+        # self.tracking = True
+        # dummy_input = Variable(torch.randn(1, 1, self.input_dim))
+        # if device:
+        #     dummy_input = dummy_input.to(device)
+        # torch.onnx.export(self, dummy_input, name, verbose=True)
+        # self.tracking = False
+        print("ONNX export is disabled.")
+        return None
 
     def batch_accuracy(self, scores, labels):
         """ Compute the training accuracy of the results of a single mini-batch """
@@ -144,7 +146,7 @@ class KeywordSpotter(nn.Module):
             mean = None
             std = None
 
-        self.normalize(mean, std)
+        #self.normalize(mean, std)
 
         self.training = True
         start = time.time()
@@ -216,7 +218,7 @@ class KeywordSpotter(nn.Module):
                         if rolling_length <= max_rolling_length:
                             if (i_batch + 1) % rolling_length == 0:
                                 self.init_hidden()
-                                break
+                                #break
 
                         self.rolling_step()
                     else:
