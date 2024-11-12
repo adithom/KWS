@@ -576,6 +576,12 @@ class FastGRNNCUDA(nn.Module):
         if utils.findCUDA() is None:
             raise Exception('FastGRNNCUDA is supported only on GPU devices.')
         NON_LINEARITY = {"sigmoid": 0, "relu": 1, "tanh": 2}
+        self.cell = FastGRNNCUDACell(input_size, hidden_size,
+                                 gate_nonlinearity=gate_nonlinearity,
+                                 update_nonlinearity=update_nonlinearity,
+                                 wRank=wRank, uRank=uRank,
+                                 wSparsity=wSparsity, uSparsity=uSparsity,
+                                 zetaInit=zetaInit, nuInit=nuInit)
         self._input_size = input_size
         self._hidden_size = hidden_size
         self._zetaInit = zetaInit

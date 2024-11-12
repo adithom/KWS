@@ -129,7 +129,7 @@ class KeywordSpotter(nn.Module):
             scheduler = utils.ExponentialResettingLR(optimizer, gamma, reset)
         return scheduler
 
-    def fit(self, training_data, validation_data, options, sparsify=False, device=None, detail=False, run=None, outdir):
+    def fit(self, training_data, validation_data, options, sparsify=False, device=None, detail=False, run=None):
         """
         Perform the training.  This is not called "train" because
         the base class already defines that method with a different meaning.
@@ -191,7 +191,7 @@ class KeywordSpotter(nn.Module):
         log = []
         
         iteration = 0
-        early_stop_model_path = os.path.join(outdir, "early_stopped_model.pth")
+        early_stop_model_path = os.path.join(".", "early_stopped_model.pth")
 
         try:
             for epoch in range(num_epochs):
@@ -364,7 +364,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
         config.dataset.path,
         batch_size=config.training.batch_size,
         feature_type = config.dataset.feature_type,
-        num_workers=4,  # Increase based on CPU cores
+        num_workers=2,  # Increase based on CPU cores
         pin_memory=True if device.type == 'cuda' else False,
         )
 
@@ -382,7 +382,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
     if not evaluate_only:
         start_time = time.time()
         log = model.fit(train_loader, val_loader, config.training, 
-                       config.model.sparsify, device, detail, outdir=outdir)
+                       config.model.sparsify, device, detail)
         end_time = time.time()
         
         filename = config.model.filename or f"{config.model.architecture}_KeywordSpotter.pt"

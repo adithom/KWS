@@ -41,17 +41,17 @@ __device__ __forceinline__ scalar_t d_tanh(scalar_t tan_z) {
 
 template <typename scalar_t, scalar_t (*non_linearity) (scalar_t)>
 __global__ void fastgrnn_cuda_forward_kernel(
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> new_h,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> z,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> h_prime,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> pre_comp,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> bias_z,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> bias_h_prime,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> nu,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> zeta,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> old_h) {
-    const int n = blockIdx.y;
-    const int c = blockIdx.x * blockDim.x + threadIdx.x;
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> new_h,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> z,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> h_prime,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> pre_comp,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> bias_z,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> bias_h_prime,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> nu,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> zeta,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> old_h) {
+    const int32_t n = blockIdx.y;
+    const int32_t c = blockIdx.x * blockDim.x + threadIdx.x;
     if (c < old_h.size(1)){
       z[n][c] = non_linearity(pre_comp[n][c] + bias_z[0][c]);
       h_prime[n][c] = tanh(pre_comp[n][c] + bias_h_prime[0][c]);
@@ -62,22 +62,22 @@ __global__ void fastgrnn_cuda_forward_kernel(
 
 template <typename scalar_t, scalar_t (*d_non_linearity) (scalar_t)>
 __global__ void fastgrnn_cuda_backward_kernel(
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_precomp,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_old_h,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_bias_z,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_bias_h_prime,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_nu,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_zeta,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> grad_h,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> z,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> h_prime,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> zeta,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> nu,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_zeta_sigmoid,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_nu_sigmoid,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> old_h) {
-    const int n = blockIdx.y;
-    const int c = blockIdx.x * blockDim.x + threadIdx.x;
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_precomp,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_old_h,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_bias_z,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_bias_h_prime,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_nu,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_zeta,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> grad_h,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> z,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> h_prime,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> zeta,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> nu,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_zeta_sigmoid,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_nu_sigmoid,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> old_h) {
+    const int32_t n = blockIdx.y;
+    const int32_t c = blockIdx.x * blockDim.x + threadIdx.x;
     if (c < old_h.size(1)){
       d_old_h[n][c] = z[n][c] * grad_h[n][c];
       d_bias_h_prime[n][c] = (zeta[0][0] * (1.0 - z[n][c]) + nu[0][0]) * d_tanh(h_prime[n][c]) * grad_h[n][c];
@@ -90,22 +90,22 @@ __global__ void fastgrnn_cuda_backward_kernel(
 
 template <typename scalar_t, scalar_t (*d_non_linearity) (scalar_t)>
 __global__ void fastgrnn_unroll_cuda_backward_kernel(
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_precomp,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_old_h,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_bias_z,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_bias_h_prime,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_nu,
-  torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_zeta,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> grad_h,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> z,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> h_prime,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> zeta,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> nu,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_zeta_sigmoid,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> d_nu_sigmoid,
-  const torch::PackedTensorAccessor<scalar_t,2,torch::RestrictPtrTraits,size_t> old_h) {
-    const int n = blockIdx.y;
-    const int c = blockIdx.x * blockDim.x + threadIdx.x;
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_precomp,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_old_h,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_bias_z,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_bias_h_prime,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_nu,
+  torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_zeta,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> grad_h,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> z,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> h_prime,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> zeta,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> nu,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_zeta_sigmoid,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> d_nu_sigmoid,
+  const torch::PackedTensorAccessor32<scalar_t,2,torch::RestrictPtrTraits> old_h) {
+    const int32_t n = blockIdx.y;
+    const int32_t c = blockIdx.x * blockDim.x + threadIdx.x;
     if (c < old_h.size(1)){
       d_old_h[n][c] = z[n][c] * grad_h[n][c];
       scalar_t temp_bias_h_prime = (zeta[0][0] * (1.0 - z[n][c]) + nu[0][0]) * d_tanh(h_prime[n][c]) * grad_h[n][c];
@@ -157,41 +157,41 @@ std::vector<torch::Tensor> fastgrnn_cuda_forward(
   if (z_non_linearity == 0) {
     AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
       fastgrnn_cuda_forward_kernel<scalar_t, sigmoid><<<blocks, threads>>>(
-          new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
     }));
   } else if (z_non_linearity == 1) {
     AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
       fastgrnn_cuda_forward_kernel<scalar_t, relu><<<blocks, threads>>>(
-          new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
     }));
   } else if (z_non_linearity == 2) {
     AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
       fastgrnn_cuda_forward_kernel<scalar_t, tanh><<<blocks, threads>>>(
-          new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
     }));
   }
   return {new_h, z, h_prime};
@@ -243,56 +243,56 @@ std::vector<torch::Tensor> fastgrnn_cuda_backward(
     if (z_non_linearity == 0) {
       AT_DISPATCH_FLOATING_TYPES(old_h.type(), "fastgrnn_backward_cuda", ([&] {
       fastgrnn_cuda_backward_kernel<scalar_t, d_sigmoid><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     } else if (z_non_linearity == 1) {
       AT_DISPATCH_FLOATING_TYPES(old_h.type(), "fastgrnn_backward_cuda", ([&] {
       fastgrnn_cuda_backward_kernel<scalar_t, d_relu><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     } else if (z_non_linearity == 2) {
       AT_DISPATCH_FLOATING_TYPES(old_h.type(), "fastgrnn_backward_cuda", ([&] {
       fastgrnn_cuda_backward_kernel<scalar_t, d_tanh><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     }
 
@@ -370,41 +370,41 @@ std::vector<torch::Tensor> fastgrnn_unroll_cuda_forward(
       if (z_non_linearity == 0)
         AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
           fastgrnn_cuda_forward_kernel<scalar_t, sigmoid><<<blocks, threads>>>(
-            new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            prev_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+            new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            prev_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
         }));
       else if(z_non_linearity == 1)
         AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
           fastgrnn_cuda_forward_kernel<scalar_t, relu><<<blocks, threads>>>(
-            new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            prev_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+            new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            prev_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
         }));
       else if (z_non_linearity == 2)
         AT_DISPATCH_FLOATING_TYPES(pre_comp.type(), "fastgrnn_forward_cuda", ([&] {
           fastgrnn_cuda_forward_kernel<scalar_t, tanh><<<blocks, threads>>>(
-            new_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            pre_comp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-            prev_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+            new_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            pre_comp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+            prev_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
         }));
       hidden_states[t].copy_(new_h);
       z_s[t] = z;
@@ -483,56 +483,56 @@ std::vector<torch::Tensor> fastgrnn_unroll_cuda_backward(
     if (z_non_linearity == 0)
       AT_DISPATCH_FLOATING_TYPES(z_t_.type(), "fastgrnn_forward_cuda", ([&] {
         fastgrnn_unroll_cuda_backward_kernel<scalar_t, d_sigmoid><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_curr_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          prev_h_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_curr_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          prev_h_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     else if (z_non_linearity == 1)
       AT_DISPATCH_FLOATING_TYPES(z_t_.type(), "fastgrnn_forward_cuda", ([&] {
         fastgrnn_unroll_cuda_backward_kernel<scalar_t, d_relu><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_curr_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          prev_h_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_curr_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          prev_h_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     else if(z_non_linearity == 2)
       AT_DISPATCH_FLOATING_TYPES(z_t_.type(), "fastgrnn_forward_cuda", ([&] {
         fastgrnn_unroll_cuda_backward_kernel<scalar_t, d_sigmoid><<<blocks, threads>>>(
-          d_precomp.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_old_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_z.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_bias_h_prime.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          grad_curr_h.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          z_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          h_prime_t_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          zeta.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          nu.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_zeta_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          d_nu_sigmoid.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>(),
-          prev_h_.packed_accessor<scalar_t,2,torch::RestrictPtrTraits,size_t>());
+          d_precomp.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_old_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_z.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_bias_h_prime.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          grad_curr_h.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          z_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          h_prime_t_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          zeta.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          nu.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_zeta_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          d_nu_sigmoid.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>(),
+          prev_h_.packed_accessor32<scalar_t,2,torch::RestrictPtrTraits>());
       }));
     d_old_h = torch::addmm(d_old_h, d_precomp, u);
     d_input[t] = torch::mm(d_precomp, w);
