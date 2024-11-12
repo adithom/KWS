@@ -8,10 +8,10 @@ import os
 
 class ModelOptions:
     def __init__(self):
-        self.architecture = "FastGRNN"
-        self.num_layers = 1
-        self.hidden_units = 128
-        self.hidden_units1 = None
+        self.architecture = "FastGRNNCUDA"
+        self.num_layers = 2
+        self.hidden_units = 256
+        self.hidden_units1 = 128
         self.hidden_units2 = None
         self.hidden_units3 = None
         self.filename = ""
@@ -30,11 +30,11 @@ class ModelOptions:
 class DatasetOptions:
     def __init__(self):
         self.name = "speechcommandsv02"
-        self.feature_type = 'mfcc'
+        self.feature_type = 'delta'
         self.categories = "categories.txt"
         self.path = ""
         self.auto_scale = False
-        self.normalize = False
+        self.normalize = True
 
 
 class OptimizerOptions:
@@ -67,7 +67,7 @@ class TrainingOptions:
         self.batch_size = 128
         self.optimizer = "SGD"
         self.optimizer_options = OptimizerOptions()
-        self.use_gpu = False
+        self.use_gpu = True
         self.rolling = False
         self.max_rolling_length = 100
         self.decay_step = 200

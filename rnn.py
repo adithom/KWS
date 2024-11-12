@@ -270,6 +270,9 @@ class FastGRNNCell(RNNCell):
         return "FastGRNN"
 
     def forward(self, input, state):
+        device = self.W.device
+        input = input.to(device)
+        state = state.to(device)
         if self._wRank is None:
             wComp = torch.matmul(input, self.W)
         else:

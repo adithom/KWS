@@ -129,7 +129,7 @@ class KeywordSpotter(nn.Module):
             scheduler = utils.ExponentialResettingLR(optimizer, gamma, reset)
         return scheduler
 
-    def fit(self, training_data, validation_data, options, sparsify=False, device=None, detail=False, run=None):
+    def fit(self, training_data, validation_data, options, sparsify=False, device=None, detail=False, run=None, outdir):
         """
         Perform the training.  This is not called "train" because
         the base class already defines that method with a different meaning.
@@ -189,96 +189,113 @@ class KeywordSpotter(nn.Module):
 
         # optimizer = optim.Adam(model.parameters(), lr=0.0001)
         log = []
+        
+        iteration = 0
+        early_stop_model_path = os.path.join(outdir, "early_stopped_model.pth")
 
-        for epoch in range(num_epochs):
-            self.train()
-            if options.rolling:
-                rolling_length += 1
-                if rolling_length <= max_rolling_length:
-                    self.init_hidden_bag(hidden_bag_size, device)
-            for i_batch, (audio, labels) in enumerate(training_data):
-                if not self.batch_first:
-                    audio = audio.permute(2, 0, 1)  # GRU wants seq,batch,feature
-
-                if device:
-                    self.move_to(device)
-                    audio = audio.to(device)
-                    labels = labels.to(device)
-
-                # Also, we need to clear out the hidden state,
-                # detaching it from its history on the last instance.
+        try:
+            for epoch in range(num_epochs):
+            
+                self.train()
                 if options.rolling:
+                    rolling_length += 1
                     if rolling_length <= max_rolling_length:
-                        if (i_batch + 1) % rolling_length == 0:
-                            self.init_hidden()
-                            break
+                        self.init_hidden_bag(hidden_bag_size, device)
+                for i_batch, (audio, labels) in enumerate(training_data):
+                    if not self.batch_first:
+                        audio = audio.permute(2, 0, 1)  # GRU wants seq,batch,feature
 
-                    self.rolling_step()
-                else:
-                    self.init_hidden()
+                    if device:
+                        self.move_to(device)
+                        audio = audio.to(device)
+                        labels = labels.to(device)
 
-                self.to(device) # sparsify routines might move param matrices to cpu    
+                    # Also, we need to clear out the hidden state,
+                    # detaching it from its history on the last instance.
+                    if options.rolling:
+                        if rolling_length <= max_rolling_length:
+                            if (i_batch + 1) % rolling_length == 0:
+                                self.init_hidden()
+                                break
 
-                # Before the backward pass, use the optimizer object to zero all of the
-                # gradients for the variables it will update (which are the learnable
-                # weights of the model). This is because by default, gradients are
-                # accumulated in buffers( i.e, not overwritten) whenever .backward()
-                # is called. Checkout docs of torch.autograd.backward for more details.
-                optimizer.zero_grad()
+                        self.rolling_step()
+                    else:
+                        self.init_hidden()
 
-                # Run our forward pass.
-                keyword_scores = self(audio)
+                    self.to(device) # sparsify routines might move param matrices to cpu    
 
-                # Compute the loss, gradients
-                loss = loss_function(keyword_scores, labels)
+                    # Before the backward pass, use the optimizer object to zero all of the
+                    # gradients for the variables it will update (which are the learnable
+                    # weights of the model). This is because by default, gradients are
+                    # accumulated in buffers( i.e, not overwritten) whenever .backward()
+                    # is called. Checkout docs of torch.autograd.backward for more details.
+                    optimizer.zero_grad()
 
-                # Backward pass: compute gradient of the loss with respect to all the learnable
-                # parameters of the model. Internally, the parameters of each Module are stored
-                # in Tensors with requires_grad=True, so this call will compute gradients for
-                # all learnable parameters in the model.
-                loss.backward()
-                # move to next learning rate
-                if scheduler:
-                    scheduler.step()
+                    # Run our forward pass.
+                    keyword_scores = self(audio)
 
-                # Calling the step function on an Optimizer makes an update to its parameters
-                # applying the gradients we computed during back propagation
-                optimizer.step()
+                    # Compute the loss, gradients
+                    loss = loss_function(keyword_scores, labels)
 
-                if sparsify:
-                    if epoch >= num_epochs/3:
-                        if epoch < (2*num_epochs)/3:
-                            if i_batch % trim_level == 0:
-                                self.sparsify()
+                    # Backward pass: compute gradient of the loss with respect to all the learnable
+                    # parameters of the model. Internally, the parameters of each Module are stored
+                    # in Tensors with requires_grad=True, so this call will compute gradients for
+                    # all learnable parameters in the model.
+                    loss.backward()
+                    # move to next learning rate
+                    if scheduler:
+                        scheduler.step()
+
+                    # Calling the step function on an Optimizer makes an update to its parameters
+                    # applying the gradients we computed during back propagation
+                    optimizer.step()
+
+                    if sparsify:
+                        if epoch >= num_epochs/3:
+                            if epoch < (2*num_epochs)/3:
+                                if i_batch % trim_level == 0:
+                                    self.sparsify()
+                                else:
+                                    self.sparsifyWithSupport()
                             else:
                                 self.sparsifyWithSupport()
-                        else:
-                            self.sparsifyWithSupport()
-                    self.to(device) # sparsify routines might move param matrices to cpu
+                        self.to(device) # sparsify routines might move param matrices to cpu
 
-                learning_rate = optimizer.param_groups[0]['lr']
-                if detail:
                     learning_rate = optimizer.param_groups[0]['lr']
-                    log += [{'iteration': iteration, 'loss': loss.item(), 'learning_rate': learning_rate}]
-            # Find the best prediction in each sequence and return it's accuracy
-            rate = self.evaluate(validation_data, batch_size, device)
-            learning_rate = optimizer.param_groups[0]['lr']
-            current_loss = float(loss.item())
-            print("Epoch {}, Loss {:.3f}, Validation Accuracy {:.3f}, Learning Rate {}".format(
-                  epoch, current_loss, rate * 100, learning_rate))
-            log += [{'epoch': epoch, 'loss': current_loss, 'accuracy': rate, 'learning_rate': learning_rate}]
-            if run is not None:
-                run.log('progress', epoch / num_epochs)
-                run.log('epoch', epoch)
-                run.log('accuracy', rate)
-                run.log('loss', current_loss)
-                run.log('learning_rate', learning_rate)
+                    if detail:
+                        learning_rate = optimizer.param_groups[0]['lr']
+                        log += [{'iteration': iteration, 'loss': loss.item(), 'learning_rate': learning_rate}]
+                    iteration += 1
+                # Find the best prediction in each sequence and return it's accuracy
+                rate = self.evaluate(validation_data, batch_size, device)
+                learning_rate = optimizer.param_groups[0]['lr']
+                current_loss = float(loss.item())
+                print("Epoch {}, Loss {:.3f}, Validation Accuracy {:.3f}, Learning Rate {}".format(
+                    epoch, current_loss, rate * 100, learning_rate))
+                log += [{'epoch': epoch, 'loss': current_loss, 'accuracy': rate, 'learning_rate': learning_rate}]
+                if run is not None:
+                    run.log('progress', epoch / num_epochs)
+                    run.log('epoch', epoch)
+                    run.log('accuracy', rate)
+                    run.log('loss', current_loss)
+                    run.log('learning_rate', learning_rate)
+                    
+        except KeyboardInterrupt:
+            print("\nEarly stopping invoked by user (KeyboardInterrupt). Saving model and stopping training.")
+            torch.save({
+                'model_state_dict': self.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                # Add any other relevant information
+                }, early_stop_model_path)
+            print(f"Model saved to {early_stop_model_path}")
+            
 
-        end = time.time()
-        self.training = False
-        print("Trained in {:.2f} seconds".format(end - start))
-        print("Model size {}".format(self.get_model_size()))
-        return log
+        finally:
+            end = time.time()
+            self.training = False
+            print("Trained in {:.2f} seconds".format(end - start))
+            print("Model size {}".format(self.get_model_size()))
+            return log
 
     def evaluate(self, test_data, batch_size, device=None, outfile=None):
         """
@@ -336,14 +353,20 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
 
     # Set up device
     device = torch.device("cuda" if config.training.use_gpu and torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        config.model.architecture = 'FastGRNNCUDA'
+    else:
+        config.model.architecture = 'FastGRNN'
     log = []
     
     # Create dataloaders with normalization
     train_loader, val_loader, test_loader = create_dataloaders(
         config.dataset.path,
         batch_size=config.training.batch_size,
-        feature_type = config.dataset.feature_type
-    )
+        feature_type = config.dataset.feature_type,
+        num_workers=4,  # Increase based on CPU cores
+        pin_memory=True if device.type == 'cuda' else False,
+        )
 
     # Save normalization parameters
     if not evaluate_only:
@@ -359,7 +382,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
     if not evaluate_only:
         start_time = time.time()
         log = model.fit(train_loader, val_loader, config.training, 
-                       config.model.sparsify, device, detail)
+                       config.model.sparsify, device, detail, outdir=outdir)
         end_time = time.time()
         
         filename = config.model.filename or f"{config.model.architecture}_KeywordSpotter.pt"

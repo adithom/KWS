@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import sys
-from rnn import FastGRNN, FastGRNNCUDA
+from rnn import FastGRNN, FastGRNNCUDA, onnx_exportable_rnn
 
 def get_rnn_class(rnn_name):
     """Return the RNN class based on rnn_name."""
@@ -70,7 +70,7 @@ def get_model_class(inheritance_class=nn.Module):
                 for l in range(self.num_layers)])
 
             if rnn_name == "FastGRNNCUDA":
-                RNN_ = getattr(getattr(getattr(__import__('edgeml_pytorch'), 'graph'), 'rnn'), 'FastGRNN')
+                RNN_ = get_rnn_class(rnn_name)
                 self.rnn_list_ = nn.ModuleList([
                     RNN_(self.input_dim if l==0 else self.hidden_units_list[l-1],
                         self.hidden_units_list[l],

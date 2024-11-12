@@ -131,7 +131,7 @@ def load_file_list(file_list_path):
         return set(line.strip() for line in f)
 
 
-def create_dataloaders(root_dir, batch_size=64, feature_type='mfcc'):
+def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_workers=4, pin_memory=False):
     """Create normalized DataLoaders for training, validation, and testing datasets."""
     processor = MFCCProcessor()
 
@@ -162,8 +162,8 @@ def create_dataloaders(root_dir, batch_size=64, feature_type='mfcc'):
     test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False, feature_type=feature_type, mean=train_dataset.mean, std=train_dataset.std)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
     return train_loader, val_loader, test_loader
