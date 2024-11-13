@@ -6,13 +6,14 @@ from torch.autograd import Function
 import numpy as np
 
 import utils
+import fastgrnn_cuda
 
-try:
-    if utils.findCUDA() is not None:
-        import fastgrnn_cuda
-except:
-    print("Running without FastGRNN CUDA")
-    pass
+# try:
+#     if utils.findCUDA() is not None:
+#         import fastgrnn_cuda
+# except:
+#     print("Running without FastGRNN CUDA")
+#     pass
 #todo: build and install cuda/setup.py
 
 def onnx_exportable_rnn(input, fargs, cell, output):
@@ -743,6 +744,58 @@ class FastGRNNUnrollFunction(Function):
 
     @staticmethod
     def backward(ctx, grad_h):
+        grad_h = grad_h.contiguous()
+        (
+            input,
+            hiddenState,
+            zeta,
+            nu,
+            W,
+            U,
+            bias_gate,
+            bias_update,
+            old_h,
+            w1,
+            w2,
+            u1,
+            u2,
+        ) = ctx.saved_variables
+
+        # Make all tensors contiguous
+        input = input.contiguous()
+        hiddenState = hiddenState.contiguous()
+        zeta = zeta.contiguous()
+        nu = nu.contiguous()
+        W = W.contiguous()
+        U = U.contiguous()
+        bias_gate = bias_gate.contiguous()
+        bias_update = bias_update.contiguous()
+        old_h = old_h.contiguous()
+        if w1 is not None:
+            w1 = w1.contiguous()
+        if w2 is not None:
+            w2 = w2.contiguous()
+        if u1 is not None:
+            u1 = u1.contiguous()
+        if u2 is not None:
+            u2 = u2.contiguous()
+
         outputs = fastgrnn_cuda.backward_unroll(
-            grad_h.contiguous(), *ctx.saved_variables, ctx.gate_non_linearity)
+            grad_h,          # arg0
+            input,           # arg1
+            hiddenState,     # arg2
+            W,               # arg3
+            U,               # arg4
+            bias_gate,       # arg5
+            bias_update,     # arg6
+            zeta,            # arg7
+            nu,              # arg8
+            old_h,           # arg9
+            w1,              # arg10
+            w2,              # arg11
+            u1,              # arg12
+            u2,              # arg13
+            ctx.gate_non_linearity  # arg14
+        )
+
         return tuple(outputs + [None])

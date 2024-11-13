@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from mfccProcessor import MFCCProcessor
+from mfcc_processor import MFCCProcessor
 import logging
 
 # Configure logging
