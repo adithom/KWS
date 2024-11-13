@@ -784,12 +784,12 @@ class FastGRNNUnrollFunction(Function):
             grad_h,          # arg0
             input,           # arg1
             hiddenState,     # arg2
+            zeta,            
+            nu,   
             W,               # arg3
             U,               # arg4
             bias_gate,       # arg5
-            bias_update,     # arg6
-            zeta,            # arg7
-            nu,              # arg8
+            bias_update,     # arg6           
             old_h,           # arg9
             w1,              # arg10
             w2,              # arg11

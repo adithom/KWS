@@ -5,7 +5,7 @@
     "feature_type": "delta",
     "name": "speechcommandsv02",
     "normalize": true,
-    "path": "./google_speech/marvin",
+    "path": "./google_speech/",
     "sample_non_kw": null
   },
   "description": "",
@@ -50,7 +50,7 @@
     "lr_peaks": 1,
     "lr_scheduler": null,
     "lr_step_size": 1,
-    "max_epochs": 30,
+    "max_epochs": 50,
     "max_rolling_length": 100,
     "optimizer": "SGD",
     "optimizer_options": {
