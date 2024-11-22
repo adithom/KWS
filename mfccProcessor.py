@@ -3,7 +3,7 @@ import librosa
 import numpy as np
 
 class MFCCProcessor:
-    def __init__(self, n_mfcc=32, width=9, sample_rate = 16000, winlen = 0.025, winstep = 0.010):
+    def __init__(self, n_mfcc=32, width=9, sample_rate = 16000, winlen = 0.025, winstep = 0.010, feature_type='mfcc'):
         """
         Initialize the MFCCProcessor with parameters.
 
@@ -16,19 +16,20 @@ class MFCCProcessor:
         self.sample_rate = sample_rate
         self.winlen = winlen
         self.winstep = winstep
+        self.feature_type = feature_type
         self.n_fft = int(winlen * sample_rate)  # Number of samples per window
         self.hop_length = int(winstep * sample_rate)
 
-    def compute_features(self, audio_file, feature_type='mfcc'):
+    def compute_features(self, audio_file):
         """Compute features based on the specified type."""
-        if feature_type == 'mfcc':
+        if self.feature_type == 'mfcc':
             return self.compute_mfcc(audio_file)
-        elif feature_type == 'delta':
+        elif self.feature_type == 'delta':
             return self.compute_delta(audio_file)
-        elif feature_type == 'delta_delta':
+        elif self.feature_type == 'delta_delta':
             return self.compute_delta_delta(audio_file)
         else:
-            raise ValueError(f"Unknown feature type: {feature_type}")
+            raise ValueError(f"Unknown feature type: {self.feature_type}")
 
     def load_audio(self, audio_file):
         """Load an audio file."""

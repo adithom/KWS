@@ -1,6 +1,8 @@
 import os
 import shutil
 
+#todo: remove one and zero and add noise and background noise
+
 def copy_google_speech_data(source_dir, target_dir):
     """
     Copies specified subdirectories and files from source_dir to target_dir.
@@ -9,15 +11,12 @@ def copy_google_speech_data(source_dir, target_dir):
         source_dir (str): Path to the source directory (google_speech).
         target_dir (str): Path to the target directory (google_12).
     """
-    # Directories to copy
     directories_to_copy = [
         'yes','no', 'up', 'down', 'left', 'right', 'on', 'off', 'stop','go', 'zero', 'one'
     ]
 
-    # Files to copy
     files_to_copy = ['validation_list.txt', 'testing_list.txt']
 
-    # Ensure the target directory exists
     os.makedirs(target_dir, exist_ok=True)
 
     # Copy specified directories
@@ -45,6 +44,6 @@ def copy_google_speech_data(source_dir, target_dir):
 
 # Example usage
 if __name__ == "__main__":
-    source_directory = "google_speech"  # Replace with the path to your google_speech directory
-    target_directory = "google_12"  # Replace with the desired path for google_12 directory
+    source_directory = "google_speech"
+    target_directory = "google_12"
     copy_google_speech_data(source_directory, target_directory)

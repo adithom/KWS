@@ -1,4 +1,9 @@
 /google_speech
+/google_12
 /cuda/build
 /cuda/dist
 /cuda/fastgrnn_cuda.egg-info
+/.idea
+.DS_Store
+/__pycache__/
+/config.json

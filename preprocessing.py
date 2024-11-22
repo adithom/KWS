@@ -10,6 +10,8 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+#todo: Test time augmentation: time shifting, time stretching, pitch augmentation
+
 class GoogleSpeechDataset(Dataset):
     def __init__(self, root_dir, processor, max_len=99, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc', mean=None, std=None):
         """
@@ -45,8 +47,7 @@ class GoogleSpeechDataset(Dataset):
         self.max_len = max_len
         self.training = training
         self.feature_type = feature_type
-        
-        # Normalization parameters
+
         self.mean = mean
         self.std = std
 
@@ -62,7 +63,6 @@ class GoogleSpeechDataset(Dataset):
         # Compute along all axes except the batch dimension
         self.mean = np.mean(features_array, axis=(0, 2), keepdims=True)
         self.std = np.std(features_array, axis=(0, 2), keepdims=True)
-        # Avoid division by zero
         self.std = np.where(self.std == 0, 1e-6, self.std)
         return self.mean, self.std
         
@@ -73,19 +73,16 @@ class GoogleSpeechDataset(Dataset):
                 self.compute_normalization_stats(features_array)
             else:
                 raise ValueError("Normalization parameters not set for non-training dataset")
-        
-        # Apply normalization
+
         normalized_features = (features_array - self.mean) / self.std
         return normalized_features
 
     def pad_or_truncate(self, mfcc):
         """Pad or truncate the MFCC feature to a fixed length."""
-        # If the MFCC is shorter than max_len, pad with zeros
         if mfcc.shape[1] < self.max_len:
             pad_width = self.max_len - mfcc.shape[1]
             mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
 
-        # If the MFCC is longer than max_len, truncate it
         elif mfcc.shape[1] > self.max_len:
             mfcc = mfcc[:, :self.max_len]
 
@@ -105,13 +102,10 @@ class GoogleSpeechDataset(Dataset):
             wav_files = [f for f in files if f.endswith('.wav')]
             logger.info(f"Processing subdirectory: {subdirectory} - Found {len(wav_files)} WAV files")
             for file_name in wav_files:
-                # Construct the relative file path using os.path.join and normpath
                 relative_path = os.path.normpath(os.path.relpath(os.path.join(root, file_name), self.root_dir))
 
-                # Debug log the file being processed
                 logger.debug(f"Processing file: {relative_path}")
 
-                # Modified file filtering logic
                 if self.include_files:
                     # For validation/test sets, only process files in include_files
                     if relative_path not in self.include_files:
@@ -128,7 +122,7 @@ class GoogleSpeechDataset(Dataset):
 
                 # Compute features
                 full_path = os.path.join(self.root_dir, relative_path)
-                mfcc = self.processor.compute_features(full_path, self.feature_type)
+                mfcc = self.processor.compute_features(full_path)
 
                 if mfcc is not None:
                     mfcc = self.pad_or_truncate(mfcc)
@@ -156,7 +150,6 @@ class GoogleSpeechDataset(Dataset):
             self.mean, self.std = self.compute_normalization_stats(features_array)
         normalized_features = self.normalize_features(features_array)
 
-        # Convert features and labels to PyTorch tensors
         features_tensor = torch.tensor(normalized_features, dtype=torch.float32)
         labels_tensor = torch.tensor(encoded_labels, dtype=torch.long)
 
@@ -166,8 +159,8 @@ class GoogleSpeechDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        """Retrieve the feature and label for the given index."""
-        # Use clone().detach() to safely return a copy without gradients
+        """Retrieve the feature and label for the given index.
+        This is PyTorch requirement for Dataset class."""
         feature = self.data[idx].clone().detach().float()
         label = self.labels[idx].clone().detach().long()
         return feature, label
@@ -176,20 +169,17 @@ class GoogleSpeechDataset(Dataset):
 def load_file_list(file_list_path):
     """Load a list of files from a text file into a set, handling different path formats."""
     files = set()
-    #valid_subdirs = {'bed', 'follow', 'wow'}  # Add all your valid subdirectories here
+    valid_subdirs = {'yes','no', 'up', 'down', 'left', 'right', 'on', 'off', 'stop','go', 'zero', 'one'}
 
     with open(file_list_path, 'r') as f:
         for line in f:
-            # Normalize path and split into parts
             path = os.path.normpath(line.strip())
             parts = path.split(os.sep)
 
-            # If the path starts with a subdir we don't have, skip it
-            #if parts[0] not in valid_subdirs:
-            #    continue
+            if parts[0] not in valid_subdirs:
+                continue
 
             files.add(path)
-            # Also add the alternative slash version
             files.add(path.replace('\\', '/'))
             files.add(path.replace('/', '\\'))
 
@@ -199,7 +189,7 @@ def load_file_list(file_list_path):
 
 def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_workers=4, pin_memory=False):
     """Create normalized DataLoaders for training, validation, and testing datasets."""
-    processor = MFCCProcessor()
+    processor = MFCCProcessor(feature_type=feature_type)
 
     try:
         validation_files = load_file_list(os.path.join(root_dir, 'validation_list.txt'))
@@ -225,7 +215,6 @@ def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_worker
 
     #print(f"Training mean: {train_dataset.mean}, Training std: {train_dataset.std}")
 
-    # Apply training set's normalization parameters to val and test sets
     val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False, feature_type=feature_type,mean=train_dataset.mean, std=train_dataset.std)
     test_dataset = GoogleSpeechDataset(root_dir, processor, include_files=testing_files, training=False, feature_type=feature_type, mean=train_dataset.mean, std=train_dataset.std)
 

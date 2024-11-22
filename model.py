@@ -1,5 +1,4 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT license.
+#Adapted from Microsoft/EdgeML
 
 import torch
 import torch.nn as nn

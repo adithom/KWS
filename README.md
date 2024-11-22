@@ -35,7 +35,7 @@ python setup.py install
 
 Run Model
 ```
-python trainClassifier.py --dataset ./google_12 --epochs 30 --batch_size 64 --outdir OUTPUT_DIRECTORY --use_gpu
+python trainClassifier.py --dataset ./google_12 --epochs 30 --batch_size 64 --outdir OUTPUT_DIRECTORY --use_batchnorm
 ```
 
 Adjust parameters in the TrainingConfig.py file to control various aspects of training

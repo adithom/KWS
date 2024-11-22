@@ -363,7 +363,6 @@ class FastGRNNBatchNormCell(RNNCell):
         # One for the W transformation and one for the U transformation
         self.bn_w = nn.BatchNorm1d(hidden_size)
         self.bn_u = nn.BatchNorm1d(hidden_size)
-        # Combined batch norm for the pre-activation states
         self.bn_gate = nn.BatchNorm1d(hidden_size)
         self.bn_update = nn.BatchNorm1d(hidden_size)
 
