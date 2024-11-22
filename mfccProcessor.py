@@ -3,7 +3,7 @@ import librosa
 import numpy as np
 
 class MFCCProcessor:
-    def __init__(self, n_mfcc=20, width=9, sample_rate = 16000, winlen = 0.025, winstep = 0.010):
+    def __init__(self, n_mfcc=32, width=9, sample_rate = 16000, winlen = 0.025, winstep = 0.010):
         """
         Initialize the MFCCProcessor with parameters.
 

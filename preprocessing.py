@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from mfcc_processor import MFCCProcessor
+from mfccProcessor import MFCCProcessor
 import logging
 
 # Configure logging
@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class GoogleSpeechDataset(Dataset):
-    def __init__(self, root_dir, processor, max_len=98, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc', mean=None, std=None):
+    def __init__(self, root_dir, processor, max_len=99, include_files=None, exclude_files=None, training=False, feature_type = 'mfcc', mean=None, std=None):
         """
         Initialize the dataset.
 
@@ -100,7 +100,7 @@ class GoogleSpeechDataset(Dataset):
         # Scan the entire directory for .wav files
         for root, _, files in os.walk(self.root_dir):
             subdirectory = os.path.relpath(root, self.root_dir)
-            if subdirectory == '.':
+            if subdirectory in ('.', './idea'):
                 continue
             wav_files = [f for f in files if f.endswith('.wav')]
             logger.info(f"Processing subdirectory: {subdirectory} - Found {len(wav_files)} WAV files")

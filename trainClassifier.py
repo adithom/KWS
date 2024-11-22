@@ -137,7 +137,17 @@ class KeywordSpotter(nn.Module):
         the base class already defines that method with a different meaning.
         The base class "train" method puts the Module into "training mode".
         """
-        print("Training {} using {} rows of featurized training input...".format(self.name(), len(training_data.dataset)))
+        print(
+            f"Training {self.name()} with the following configuration:\n"
+            f" - Layers: {self.num_layers}\n"
+            f" - Hidden Units per Layer: {self.hidden_units_list}\n"
+            f" - Gate Non-Linearity: {self.gate_nonlinearity}\n"
+            f" - Update Non-Linearity: {self.update_nonlinearity}\n"
+            f" - Sparsify: {'Enabled' if sparsify else 'Disabled'}\n"
+            f" - Optimizer: {options.optimizer} with Learning Rate: {options.learning_rate}\n"
+            f" - Using Device: {device.type}\n"
+            f" - Training on {len(training_data.dataset)} rows of featurized input...\n"
+        )
 
         if training_data.dataset.mean is not None:
             mean = torch.from_numpy(np.array([[training_data.dataset.mean]])).to(device)
@@ -314,15 +324,16 @@ class KeywordSpotter(nn.Module):
         overall_accuracy = passed / total
         return overall_accuracy
 
-def create_model(model_config, input_size, num_keywords):
+def create_model(model_config, input_size, num_keywords, architecture=None):
     ModelClass = get_model_class(KeywordSpotter)
+    rnn_name = architecture if architecture else model_config.architecture
     hidden_units_list = [model_config.hidden_units1, model_config.hidden_units2, model_config.hidden_units3]
     wRank_list = [model_config.wRank1, model_config.wRank2, model_config.wRank3]
     uRank_list = [model_config.uRank1, model_config.uRank2, model_config.uRank3]
     wSparsity_list = [model_config.wSparsity, model_config.wSparsity, model_config.wSparsity]
     uSparsity_list = [model_config.uSparsity, model_config.uSparsity, model_config.uSparsity]
     print(model_config.gate_nonlinearity, model_config.update_nonlinearity)
-    return ModelClass(model_config.architecture, input_size, model_config.num_layers,
+    return ModelClass(rnn_name, input_size, model_config.num_layers,
                       hidden_units_list, wRank_list, uRank_list, wSparsity_list,
                       uSparsity_list, model_config.gate_nonlinearity, 
                       model_config.update_nonlinearity, num_keywords)
@@ -339,9 +350,16 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
     # Set up device
     device = torch.device("cuda" if config.training.use_gpu and torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        config.model.architecture = 'FastGRNNCUDA'
+        if config.model.use_batchnorm:
+            config.model.architecture = 'FastGRNNBatchNorm'
+            #todo: add FastGRNNBatchNormCUDA
+        else:
+            config.model.architecture = 'FastGRNNCUDA'
     else:
-        config.model.architecture = 'FastGRNN'
+        if config.model.use_batchnorm:
+            config.model.architecture = 'FastGRNNBatchNorm'
+        else:
+            config.model.architecture = 'FastGRNN'
     log = []
     
     # Create dataloaders with normalization
@@ -380,7 +398,7 @@ def train(config, evaluate_only=False, outdir=".", detail=False):
 
     # Evaluate model
     accuracy = model.evaluate(test_loader, device)
-    print(f"Test accuracy = {accuracy:.2f}%")
+    print(f"Test accuracy = {accuracy * 100:.2f}%")
 
     if not evaluate_only:
         model.export(os.path.join(outdir, filename.replace(".pt", ".onnx")), device)
@@ -412,6 +430,7 @@ if __name__ == '__main__':
 
     # all the training parameters
     parser.add_argument("--epochs", help="Number of epochs to train", type=int)
+    parser.add_argument("--use_batchnorm", help="Use batch normalization in FastGRNN layers", action="store_true")
     parser.add_argument("--trim_level", help="Number of batches before sparse support is updated in IHT", type=int)
     parser.add_argument("--lr_scheduler", help="Type of learning rate scheduler (None, TriangleLR, CosineAnnealingLR,"
                                                " ExponentialLR, ExponentialResettingLR)")
@@ -469,6 +488,8 @@ if __name__ == '__main__':
     # then any user defined options overrides these defaults
     if args.epochs:
         config.training.max_epochs = args.epochs
+    if args.use_batchnorm:
+        config.model.use_batchnorm = args.use_batchnorm
     if args.trim_level:
         config.training.trim_level = args.trim_level
     else:

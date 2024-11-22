@@ -6,13 +6,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import sys
-from rnn import FastGRNN, FastGRNNCUDA, onnx_exportable_rnn
+from rnn import FastGRNN, FastGRNNCUDA, FastGRNNBatchNorm, onnx_exportable_rnn
 
 def get_rnn_class(rnn_name):
     """Return the RNN class based on rnn_name."""
     rnn_classes = {
         'FastGRNN': FastGRNN,
-        'FastGRNNCUDA': FastGRNNCUDA
+        'FastGRNNCUDA': FastGRNNCUDA,
+        'FastGRNNBatchNorm': FastGRNNBatchNorm
     }
     if rnn_name in rnn_classes:
         return rnn_classes[rnn_name]
@@ -120,8 +121,11 @@ def get_model_class(inheritance_class=nn.Module):
             self.mean = mean
             self.std = std
         
+        # def name(self):
+        #     return "{} layer FastGRNN".format(self.num_layers)
+
         def name(self):
-            return "{} layer FastGRNN".format(self.num_layers)
+            return f"{self.num_layers} layer {self.rnn_name}"
 
         def move_to(self, device):
             for rnn in self.rnn_list:

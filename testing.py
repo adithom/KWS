@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import subprocess
 import glob
-from mfcc_processor import MFCCProcessor
+from mfccProcessor import MFCCProcessor
 import matplotlib.pyplot as plt
 
 # def findCUDA():

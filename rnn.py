@@ -312,6 +312,125 @@ class FastGRNNCell(RNNCell):
         Vars.extend([self.zeta, self.nu])
         return Vars
 
+
+class FastGRNNBatchNormCell(RNNCell):
+    '''
+    FastGRNN Cell with Batch Normalization
+
+    Adds batch normalization layers after linear transformations but before nonlinearities
+    to help with training stability and potentially improve performance.
+    '''
+
+    def __init__(self, input_size, hidden_size, gate_nonlinearity="sigmoid",
+                 update_nonlinearity="tanh", wRank=None, uRank=None,
+                 wSparsity=1.0, uSparsity=1.0, zetaInit=1.0, nuInit=-4.0,
+                 name="FastGRNNBatchNorm"):
+        super(FastGRNNBatchNormCell, self).__init__(input_size, hidden_size,
+                                                    gate_nonlinearity, update_nonlinearity,
+                                                    1, 1, 2, wRank, uRank, wSparsity,
+                                                    uSparsity)
+        self._zetaInit = zetaInit
+        self._nuInit = nuInit
+        if wRank is not None:
+            self._num_W_matrices += 1
+            self._num_weight_matrices[0] = self._num_W_matrices
+        if uRank is not None:
+            self._num_U_matrices += 1
+            self._num_weight_matrices[1] = self._num_U_matrices
+        self._name = name
+
+        # Initialize W matrices
+        if wRank is None:
+            self.W = nn.Parameter(0.1 * torch.randn([input_size, hidden_size]))
+        else:
+            self.W1 = nn.Parameter(0.1 * torch.randn([input_size, wRank]))
+            self.W2 = nn.Parameter(0.1 * torch.randn([wRank, hidden_size]))
+
+        # Initialize U matrices
+        if uRank is None:
+            self.U = nn.Parameter(0.1 * torch.randn([hidden_size, hidden_size]))
+        else:
+            self.U1 = nn.Parameter(0.1 * torch.randn([hidden_size, uRank]))
+            self.U2 = nn.Parameter(0.1 * torch.randn([uRank, hidden_size]))
+
+        # Standard parameters
+        self.bias_gate = nn.Parameter(torch.ones([1, hidden_size]))
+        self.bias_update = nn.Parameter(torch.ones([1, hidden_size]))
+        self.zeta = nn.Parameter(self._zetaInit * torch.ones([1, 1]))
+        self.nu = nn.Parameter(self._nuInit * torch.ones([1, 1]))
+
+        # Batch Normalization layers
+        # One for the W transformation and one for the U transformation
+        self.bn_w = nn.BatchNorm1d(hidden_size)
+        self.bn_u = nn.BatchNorm1d(hidden_size)
+        # Combined batch norm for the pre-activation states
+        self.bn_gate = nn.BatchNorm1d(hidden_size)
+        self.bn_update = nn.BatchNorm1d(hidden_size)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def cellType(self):
+        return "FastGRNNBatchNorm"
+
+    def forward(self, input, state):
+        device = self.W.device
+        input = input.to(device)
+        state = state.to(device)
+        batch_size = input.size(0)
+
+        # Compute W transformation
+        if self._wRank is None:
+            wComp = torch.matmul(input, self.W)
+        else:
+            wComp = torch.matmul(torch.matmul(input, self.W1), self.W2)
+
+        # Compute U transformation
+        if self._uRank is None:
+            uComp = torch.matmul(state, self.U)
+        else:
+            uComp = torch.matmul(torch.matmul(state, self.U1), self.U2)
+
+        # Apply batch normalization to the transformations
+        wComp = self.bn_w(wComp)
+        uComp = self.bn_u(uComp)
+
+        # Combine transformations
+        pre_gate = wComp + uComp + self.bias_gate
+        pre_update = wComp + uComp + self.bias_update
+
+        # Apply batch normalization before nonlinearities
+        pre_gate = self.bn_gate(pre_gate)
+        pre_update = self.bn_update(pre_update)
+
+        # Apply nonlinearities
+        z = gen_nonlinearity(pre_gate, self._gate_nonlinearity)
+        c = gen_nonlinearity(pre_update, self._update_nonlinearity)
+
+        # Compute new hidden state
+        new_h = z * state + (torch.sigmoid(self.zeta) * (1.0 - z) +
+                             torch.sigmoid(self.nu)) * c
+
+        return new_h
+
+    def getVars(self):
+        Vars = []
+        if self._num_W_matrices == 1:
+            Vars.append(self.W)
+        else:
+            Vars.extend([self.W1, self.W2])
+
+        if self._num_U_matrices == 1:
+            Vars.append(self.U)
+        else:
+            Vars.extend([self.U1, self.U2])
+
+        Vars.extend([self.bias_gate, self.bias_update])
+        Vars.extend([self.zeta, self.nu])
+        return Vars
+
 class FastGRNNCUDACell(RNNCell):
     '''
     A CUDA implementation of FastGRNN Cell with Full Rank Support
@@ -562,6 +681,28 @@ class FastGRNN(nn.Module):
 
     def forward(self, input, hiddenState=None, cellState=None):
         return self.unrollRNN(input, hiddenState, cellState)
+
+class FastGRNNBatchNorm(nn.Module):
+    """FastGRNN with Batch Normalization wrapper class"""
+
+    def __init__(self, input_size, hidden_size, gate_nonlinearity="sigmoid",
+                 update_nonlinearity="tanh", wRank=None, uRank=None,
+                 wSparsity=1.0, uSparsity=1.0, zetaInit=1.0, nuInit=-4.0,
+                 batch_first=False):
+        super(FastGRNNBatchNorm, self).__init__()
+        self.cell = FastGRNNBatchNormCell(input_size, hidden_size,
+                                 gate_nonlinearity=gate_nonlinearity,
+                                 update_nonlinearity=update_nonlinearity,
+                                 wRank=wRank, uRank=uRank,
+                                 wSparsity=wSparsity, uSparsity=uSparsity,
+                                 zetaInit=zetaInit, nuInit=nuInit)
+        self.unrollRNN = BaseRNN(self.cell, batch_first=batch_first)
+
+    def getVars(self):
+        return self.unrollRNN.getVars()
+
+    def forward(self, input, hiddenState=None):
+        return self.unrollRNN(input, hiddenState)
 
 class FastGRNNCUDA(nn.Module):
     """

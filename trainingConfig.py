@@ -9,10 +9,10 @@ import os
 class ModelOptions:
     def __init__(self):
         self.architecture = "FastGRNN"
-        self.num_layers = 2
-        self.hidden_units = 256
-        self.hidden_units1 = 128
-        self.hidden_units2 = None
+        self.num_layers = 3
+        self.hidden_units = 512
+        self.hidden_units1 = 256
+        self.hidden_units2 = 128
         self.hidden_units3 = None
         self.filename = ""
         self.wRank = None
@@ -25,6 +25,7 @@ class ModelOptions:
         self.uRank3 = None
         self.gate_nonlinearity = "sigmoid"
         self.update_nonlinearity = "tanh"
+        self.use_batchnorm = False
 
 
 class DatasetOptions:
