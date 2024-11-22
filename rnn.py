@@ -6,7 +6,7 @@ from torch.autograd import Function
 import numpy as np
 
 import utils
-import fastgrnn_cuda
+#import fastgrnn_cuda
 
 # try:
 #     if utils.findCUDA() is not None:

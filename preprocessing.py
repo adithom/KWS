@@ -23,8 +23,23 @@ class GoogleSpeechDataset(Dataset):
         """
         self.root_dir = str(root_dir)
         self.processor = processor
-        self.include_files = include_files or set()
-        self.exclude_files = exclude_files or set()
+        if include_files:
+            self.include_files = set()
+            for f in include_files:
+                self.include_files.add(os.path.normpath(f))
+                self.include_files.add(f.replace('\\', '/'))
+                self.include_files.add(f.replace('/', '\\'))
+        else:
+            self.include_files = set()
+
+        if exclude_files:
+            self.exclude_files = set()
+            for f in exclude_files:
+                self.exclude_files.add(os.path.normpath(f))
+                self.exclude_files.add(f.replace('\\', '/'))
+                self.exclude_files.add(f.replace('/', '\\'))
+        else:
+            self.exclude_files = set()
         #todo: integrate exclude files from create_dataloaders
         self.label_encoder = LabelEncoder()
         self.max_len = max_len
@@ -34,6 +49,11 @@ class GoogleSpeechDataset(Dataset):
         # Normalization parameters
         self.mean = mean
         self.std = std
+
+        logger.info(f"Dataset initialization - Mode: {'Training' if training else 'Validation/Test'}")
+        logger.info(f"Root directory: {self.root_dir}")
+        logger.info(f"Number of include files: {len(self.include_files)}")
+        logger.info(f"Number of exclude files: {len(self.exclude_files)}")
         
         self.data, self.labels = self.load_dataset()
         
@@ -74,30 +94,58 @@ class GoogleSpeechDataset(Dataset):
     def load_dataset(self):
         """Scan the entire directory, load all .wav files, and extract labels."""
         features, labels = [], []
+        processed_files = 0
+        skipped_files = 0
 
         # Scan the entire directory for .wav files
         for root, _, files in os.walk(self.root_dir):
             subdirectory = os.path.relpath(root, self.root_dir)
-            logger.info(f"Processing subdirectory: {subdirectory}")
-            for file_name in files:
-                if file_name.endswith('.wav'):
-                    # Construct the relative file path
-                    relative_path = os.path.relpath(os.path.join(root, file_name), self.root_dir)
+            if subdirectory == '.':
+                continue
+            wav_files = [f for f in files if f.endswith('.wav')]
+            logger.info(f"Processing subdirectory: {subdirectory} - Found {len(wav_files)} WAV files")
+            for file_name in wav_files:
+                # Construct the relative file path using os.path.join and normpath
+                relative_path = os.path.normpath(os.path.relpath(os.path.join(root, file_name), self.root_dir))
 
-                    # Skip if the file is in the excluded list (validation or test set)
-                    if (self.include_files and relative_path not in self.include_files) or (self.exclude_files and relative_path in self.exclude_files):
+                # Debug log the file being processed
+                logger.debug(f"Processing file: {relative_path}")
+
+                # Modified file filtering logic
+                if self.include_files:
+                    # For validation/test sets, only process files in include_files
+                    if relative_path not in self.include_files:
+                        skipped_files += 1
                         continue
-                    # Extract the label from the directory name
-                    label = relative_path.split(os.sep)[0]
+                elif self.exclude_files:
+                    # For training set, skip files in exclude_files
+                    if relative_path in self.exclude_files:
+                        skipped_files += 1
+                        continue
 
-                    # Compute MFCC features
-                    mfcc = self.processor.compute_features(os.path.join(self.root_dir, relative_path),self.feature_type)
-                    if mfcc is not None:
-                        mfcc = self.pad_or_truncate(mfcc)
-                        features.append(mfcc)
-                        labels.append(label)
+                # Extract the label from the directory name
+                label = os.path.basename(os.path.dirname(relative_path))
+
+                # Compute features
+                full_path = os.path.join(self.root_dir, relative_path)
+                mfcc = self.processor.compute_features(full_path, self.feature_type)
+
+                if mfcc is not None:
+                    mfcc = self.pad_or_truncate(mfcc)
+                    features.append(mfcc)
+                    labels.append(label)
+                    processed_files += 1
+                else:
+                    logger.warning(f"Failed to extract features from {relative_path}")
+
+            logger.info(f"Dataset loading complete - Processed {processed_files} files, Skipped {skipped_files} files")
+            logger.info(f"Final dataset size: {len(features)} samples")
 
         if not features:
+            logger.error("No features were extracted. Debug information:")
+            logger.error(f"Training mode: {self.training}")
+            logger.error(f"Include files count: {len(self.include_files)}")
+            logger.error(f"Exclude files count: {len(self.exclude_files)}")
             raise ValueError("No features were extracted. Please check dataset paths and file filtering criteria.")
 
         # Encode string labels to integers
@@ -105,7 +153,6 @@ class GoogleSpeechDataset(Dataset):
         features_array = np.stack(features)
         #todo: stack or array
         if self.training and self.mean is None and self.std is None:
-            # Compute mean and std if training and not provided
             self.mean, self.std = self.compute_normalization_stats(features_array)
         normalized_features = self.normalize_features(features_array)
 
@@ -125,10 +172,29 @@ class GoogleSpeechDataset(Dataset):
         label = self.labels[idx].clone().detach().long()
         return feature, label
 
+
 def load_file_list(file_list_path):
-    """Load a list of files from a text file into a set."""
+    """Load a list of files from a text file into a set, handling different path formats."""
+    files = set()
+    #valid_subdirs = {'bed', 'follow', 'wow'}  # Add all your valid subdirectories here
+
     with open(file_list_path, 'r') as f:
-        return set(line.strip() for line in f)
+        for line in f:
+            # Normalize path and split into parts
+            path = os.path.normpath(line.strip())
+            parts = path.split(os.sep)
+
+            # If the path starts with a subdir we don't have, skip it
+            #if parts[0] not in valid_subdirs:
+            #    continue
+
+            files.add(path)
+            # Also add the alternative slash version
+            files.add(path.replace('\\', '/'))
+            files.add(path.replace('/', '\\'))
+
+    logger.info(f"Loaded {len(files)} valid files from {file_list_path}")
+    return files
 
 
 def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_workers=4, pin_memory=False):
@@ -147,6 +213,8 @@ def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_worker
         print("Warning: testing_list.txt not found. Proceeding without testing files.")
         testing_files = set()
     exclude_files = validation_files | testing_files
+    logger.info(f"Number of exclude_files: {len(exclude_files)}")
+    logger.info(f"Number of include_files: {len(validation_files) + len(testing_files)}")
 
     # Create training dataset first to compute normalization parameters
     train_dataset = GoogleSpeechDataset(root_dir, processor, exclude_files=exclude_files, training=True, feature_type=feature_type)
@@ -155,7 +223,7 @@ def create_dataloaders(root_dir, batch_size=128, feature_type='mfcc', num_worker
         raise ValueError(
             "Failed to compute mean and std for training dataset. Check the data and feature extraction pipeline.")
 
-    print(f"Training mean: {train_dataset.mean}, Training std: {train_dataset.std}")
+    #print(f"Training mean: {train_dataset.mean}, Training std: {train_dataset.std}")
 
     # Apply training set's normalization parameters to val and test sets
     val_dataset = GoogleSpeechDataset(root_dir, processor, include_files=validation_files, training=False, feature_type=feature_type,mean=train_dataset.mean, std=train_dataset.std)

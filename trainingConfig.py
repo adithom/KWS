@@ -8,7 +8,7 @@ import os
 
 class ModelOptions:
     def __init__(self):
-        self.architecture = "FastGRNNCUDA"
+        self.architecture = "FastGRNN"
         self.num_layers = 2
         self.hidden_units = 256
         self.hidden_units1 = 128
@@ -65,7 +65,7 @@ class TrainingOptions:
         self.lr_gamma = 1
         self.lr_step_size = 1
         self.batch_size = 128
-        self.optimizer = "SGD"
+        self.optimizer = "Adam"
         self.optimizer_options = OptimizerOptions()
         self.use_gpu = True
         self.rolling = False
