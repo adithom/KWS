@@ -374,7 +374,7 @@ class FastGRNNBatchNormCell(RNNCell):
     def cellType(self):
         return "FastGRNNBatchNorm"
 
-    def forward(self, input, state):
+    def forward(self, input, state, training=True):
         device = self.W.device
         input = input.to(device)
         state = state.to(device)
@@ -393,16 +393,16 @@ class FastGRNNBatchNormCell(RNNCell):
             uComp = torch.matmul(torch.matmul(state, self.U1), self.U2)
 
         # Apply batch normalization to the transformations
-        wComp = self.bn_w(wComp)
-        uComp = self.bn_u(uComp)
+        wComp = self.bn_w(wComp) if training else self.bn_w.eval()(wComp)
+        uComp = self.bn_u(uComp) if training else self.bn_u.eval()(uComp)
 
         # Combine transformations
         pre_gate = wComp + uComp + self.bias_gate
         pre_update = wComp + uComp + self.bias_update
 
         # Apply batch normalization before nonlinearities
-        pre_gate = self.bn_gate(pre_gate)
-        pre_update = self.bn_update(pre_update)
+        pre_gate = self.bn_gate(pre_gate) if training else self.bn_gate.eval()(pre_gate)
+        pre_update = self.bn_update(pre_update) if training else self.bn_update.eval()(pre_update)
 
         # Apply nonlinearities
         z = gen_nonlinearity(pre_gate, self._gate_nonlinearity)
@@ -550,8 +550,7 @@ class BaseRNN(nn.Module):
     def getVars(self):
         return self.RNNCell.getVars()
 
-    def forward(self, input, hiddenState=None,
-                cellState=None):
+    def forward(self, input, hiddenState=None, cellState=None, training = True):
         self.device = input.device
         self.num_directions = 2 if self._bidirectional else 1
         # hidden
@@ -598,11 +597,11 @@ class BaseRNN(nn.Module):
                     return torch.cat([hiddenStates,hiddenStates_reverse],-1), torch.cat([cellStates,cellStates_reverse],-1)
             else:
                 for i in range(0, input.shape[1]):
-                    hiddenState[0] = self.RNNCell(input[:, i, :], hiddenState[0].clone())
+                    hiddenState[0] = self.RNNCell(input[:, i, :], hiddenState[0].clone(), training=training)
                     hiddenStates[:, i, :] = hiddenState[0]
                     if self._bidirectional:
                         hiddenState[1] = self.RNNCell_reverse(
-                            input[:, input.shape[1]-i-1, :], hiddenState[1].clone())
+                            input[:, input.shape[1]-i-1, :], hiddenState[1].clone(), training=training)
                         hiddenStates_reverse[:, i, :] = hiddenState[1]
                 if not self._bidirectional:
                     return hiddenStates
@@ -636,11 +635,11 @@ class BaseRNN(nn.Module):
                     return torch.cat([hiddenStates,hiddenStates_reverse],-1), torch.cat([cellStates,cellStates_reverse],-1)
             else:
                 for i in range(0, input.shape[0]):
-                    hiddenState[0] = self.RNNCell(input[i, :, :], hiddenState[0].clone())
+                    hiddenState[0] = self.RNNCell(input[i, :, :], hiddenState[0].clone(), training=training)
                     hiddenStates[i, :, :] = hiddenState[0]
                     if self._bidirectional:
                         hiddenState[1] = self.RNNCell_reverse(
-                            input[input.shape[0]-i-1, :, :], hiddenState[1].clone())
+                            input[input.shape[0]-i-1, :, :], hiddenState[1].clone(), training=training)
                         hiddenStates_reverse[i, :, :] = hiddenState[1]
                 if not self._bidirectional:
                     return hiddenStates
@@ -665,6 +664,7 @@ class FastGRNN(nn.Module):
                                  wSparsity=wSparsity, uSparsity=uSparsity,
                                  zetaInit=zetaInit, nuInit=nuInit)
         self.unrollRNN = BaseRNN(self.cell, batch_first=self._batch_first, bidirectional=self._bidirectional)
+        self.training = True
 
         if self._bidirectional is True and self._is_shared_bidirectional is False:
             self.cell_reverse = FastGRNNCell(input_size, hidden_size,
@@ -679,7 +679,11 @@ class FastGRNN(nn.Module):
         return self.unrollRNN.getVars()
 
     def forward(self, input, hiddenState=None, cellState=None):
-        return self.unrollRNN(input, hiddenState, cellState)
+        return self.unrollRNN(input, hiddenState, cellState, training = self.training)
+
+    def train(self, mode=True):
+        self.training = mode
+        super(FastGRNN, self).train(mode)
 
 class FastGRNNBatchNorm(nn.Module):
     """FastGRNN with Batch Normalization wrapper class"""
@@ -696,12 +700,17 @@ class FastGRNNBatchNorm(nn.Module):
                                  wSparsity=wSparsity, uSparsity=uSparsity,
                                  zetaInit=zetaInit, nuInit=nuInit)
         self.unrollRNN = BaseRNN(self.cell, batch_first=batch_first)
+        self.training = True
 
     def getVars(self):
         return self.unrollRNN.getVars()
 
-    def forward(self, input, hiddenState=None):
-        return self.unrollRNN(input, hiddenState)
+    def forward(self, input, hiddenState=None, training = True):
+        return self.unrollRNN(input, hiddenState, training=training)
+
+    def train(self, mode=True):
+        self.training = mode
+        super(FastGRNNBatchNorm, self).train(mode)
 
 class FastGRNNCUDA(nn.Module):
     """
