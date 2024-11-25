@@ -20,11 +20,11 @@ def augment_audio(file_path, output_dir, num_copies=10):
         augmented_y = y
         if random.choice([True, False]):  
             rate = random.uniform(0.9, 1.1)  
-            augmented_y = librosa.effects.time_stretch(augmented_y, rate)
+            augmented_y = librosa.effects.time_stretch(y = augmented_y, rate = rate)
 
         if random.choice([True, False]):  
             n_steps = random.randint(-2, 2)  
-            augmented_y = librosa.effects.pitch_shift(augmented_y, sr, n_steps)
+            augmented_y = librosa.effects.pitch_shift(y = augmented_y, sr = sr, n_steps = n_steps)
 
         output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(file_path))[0]}_aug{i}.wav")
         sf.write(output_file, augmented_y, sr)

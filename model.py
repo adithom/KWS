@@ -1,11 +1,10 @@
-#Adapted from Microsoft/EdgeML
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import sys
 from rnn import FastGRNN, FastGRNNCUDA, FastGRNNBatchNorm, onnx_exportable_rnn
+
 
 def get_rnn_class(rnn_name):
     """Return the RNN class based on rnn_name."""
@@ -18,6 +17,7 @@ def get_rnn_class(rnn_name):
         return rnn_classes[rnn_name]
     else:
         raise ValueError(f"RNN class '{rnn_name}' not recognized. Available classes: {list(rnn_classes.keys())}")
+
 
 def get_model_class(inheritance_class=nn.Module):
     class RNNClassifierModel(inheritance_class):
@@ -59,32 +59,32 @@ def get_model_class(inheritance_class=nn.Module):
 
             RNN = get_rnn_class(rnn_name)
             self.rnn_list = nn.ModuleList([
-                RNN(self.input_dim if l==0 else self.hidden_units_list[l-1], 
-                            self.hidden_units_list[l], 
-                            gate_nonlinearity=self.gate_nonlinearity,
-                            update_nonlinearity=self.update_nonlinearity,
-                            wRank=self.wRank_list[l], uRank=self.uRank_list[l],
-                            wSparsity=self.wSparsity_list[l],
-                            uSparsity=self.uSparsity_list[l],
-                            batch_first = self.batch_first)
+                RNN(self.input_dim if l == 0 else self.hidden_units_list[l - 1],
+                    self.hidden_units_list[l],
+                    gate_nonlinearity=self.gate_nonlinearity,
+                    update_nonlinearity=self.update_nonlinearity,
+                    wRank=self.wRank_list[l], uRank=self.uRank_list[l],
+                    wSparsity=self.wSparsity_list[l],
+                    uSparsity=self.uSparsity_list[l],
+                    batch_first=self.batch_first)
                 for l in range(self.num_layers)])
 
             if rnn_name == "FastGRNNCUDA":
                 RNN_ = get_rnn_class(rnn_name)
                 self.rnn_list_ = nn.ModuleList([
-                    RNN_(self.input_dim if l==0 else self.hidden_units_list[l-1],
-                        self.hidden_units_list[l],
-                        gate_nonlinearity=self.gate_nonlinearity,
-                        update_nonlinearity=self.update_nonlinearity,
-                        wRank=self.wRank_list[l], uRank=self.uRank_list[l],
-                        wSparsity=self.wSparsity_list[l],
-                        uSparsity=self.uSparsity_list[l],
-                        batch_first = self.batch_first)
+                    RNN_(self.input_dim if l == 0 else self.hidden_units_list[l - 1],
+                         self.hidden_units_list[l],
+                         gate_nonlinearity=self.gate_nonlinearity,
+                         update_nonlinearity=self.update_nonlinearity,
+                         wRank=self.wRank_list[l], uRank=self.uRank_list[l],
+                         wSparsity=self.wSparsity_list[l],
+                         uSparsity=self.uSparsity_list[l],
+                         batch_first=self.batch_first)
                     for l in range(self.num_layers)])
             # The linear layer is a fully connected layer that maps from hidden state space
             # to number of expected keywords
             if self.linear:
-                last_output_size = self.hidden_units_list[self.num_layers-1]
+                last_output_size = self.hidden_units_list[self.num_layers - 1]
                 self.hidden2keyword = nn.Linear(last_output_size, num_classes)
             self.init_hidden()
 
@@ -107,7 +107,7 @@ def get_model_class(inheritance_class=nn.Module):
                     rnn.cell.sparsifyWithSupport()
 
         def get_model_size(self):
-            total_size = 4 * self.hidden_units_list[self.num_layers-1] * self.num_classes
+            total_size = 4 * self.hidden_units_list[self.num_layers - 1] * self.num_classes
             print(self.rnn_name)
             for rnn in self.rnn_list:
                 if self.rnn_name == "FastGRNNCUDA":
@@ -119,7 +119,7 @@ def get_model_class(inheritance_class=nn.Module):
         def normalize(self, mean, std):
             self.mean = mean
             self.std = std
-        
+
         # def name(self):
         #     return "{} layer FastGRNN".format(self.num_layers)
 
@@ -139,7 +139,7 @@ def get_model_class(inheritance_class=nn.Module):
 
             for l in range(self.num_layers):
                 self.hidden_bags_list.append(
-                   torch.from_numpy(np.zeros([self.hidden_bag_size, self.hidden_units_list[l]],
+                    torch.from_numpy(np.zeros([self.hidden_bag_size, self.hidden_units_list[l]],
                                               dtype=np.float32)).to(self.device))
 
         def rolling_step(self):
@@ -164,13 +164,27 @@ def get_model_class(inheritance_class=nn.Module):
             for l in range(self.num_layers):
                 self.hidden_states.append(None)
 
-        def forward(self, input):
-            """ Perform the forward processing of the given input and return the prediction """
-            # input is shape: [seq,batch,feature]
-            # if self.mean is not None:
-            #     input = (input - self.mean) / self.std
+        def train(self, mode=True):
+            """Override train method to properly handle BatchNorm."""
+            super(RNNClassifierModel, self).train(mode)
+            self.training = mode
+            if self.rnn_name == "FastGRNNBatchNorm":
+                for rnn in self.rnn_list:
+                    rnn.train(mode)
+            return self
 
+        def eval(self):
+            """Override eval method to properly handle BatchNorm."""
+            super(RNNClassifierModel, self).eval()
+            self.training = False
+            if self.rnn_name == "FastGRNNBatchNorm":
+                for rnn in self.rnn_list:
+                    rnn.eval()
+            return self
+
+        def forward(self, input):
             rnn_in = input
+
             if self.rnn_name == "FastGRNNCUDA":
                 if self.tracking:
                     for l in range(self.num_layers):
@@ -193,11 +207,21 @@ def get_model_class(inheritance_class=nn.Module):
                     rnn = self.rnn_list[l]
                     if self.hidden_states[l] is not None:
                         self.hidden_states[l] = self.hidden_states[l].clone().unsqueeze(0)
-                    model_output = rnn(rnn_in, hiddenState=self.hidden_states[l])
+
+                    # Pass training flag for BatchNorm
+                    if self.rnn_name == "FastGRNNBatchNorm":
+                        model_output = rnn(rnn_in,
+                                           hiddenState=self.hidden_states[l],
+                                           training=self.training)
+                    else:
+                        model_output = rnn(rnn_in,
+                                           hiddenState=self.hidden_states[l])
+
                     self.hidden_states[l] = model_output.detach()[-1, :, :]
                     if self.tracking:
                         weights = rnn.getVars()
-                        model_output = onnx_exportable_rnn(rnn_in, weights, rnn.cell, output=model_output)
+                        model_output = onnx_exportable_rnn(rnn_in, weights, rnn.cell,
+                                                           output=model_output)
                     rnn_in = model_output
 
             if self.linear:
@@ -205,4 +229,5 @@ def get_model_class(inheritance_class=nn.Module):
             if self.apply_softmax:
                 model_output = F.log_softmax(model_output, dim=1)
             return model_output
+
     return RNNClassifierModel

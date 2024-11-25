@@ -1,5 +1,6 @@
 /google_speech
 /google_12
+/google_12_augmented
 /cuda/build
 /cuda/dist
 /cuda/fastgrnn_cuda.egg-info

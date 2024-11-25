@@ -4,13 +4,16 @@ import random
 import librosa
 import soundfile as sf
 import logging
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+MISSING_FILES = []
+
 # Augmentation functions
-def augment_audio(file_path, output_dir, num_copies=10, noise_files=None):
+def augment_audio(file_path, output_dir, num_copies=2, noise_files=None):
     """
     Augments an audio file by applying time stretching, pitch shift, and background noise.
     Saves the augmented files to the output directory.
@@ -29,19 +32,28 @@ def augment_audio(file_path, output_dir, num_copies=10, noise_files=None):
         # Random time stretching
         if random.choice([True, False]):
             rate = random.uniform(0.9, 1.1)  # Slight time stretch
-            augmented_y = librosa.effects.time_stretch(augmented_y, rate)
+            augmented_y = librosa.effects.time_stretch(y = augmented_y, rate = rate)
 
         # Random pitch shift
         if random.choice([True, False]):
             n_steps = random.randint(-2, 2)  # Pitch shift between -2 and +2 semitones
-            augmented_y = librosa.effects.pitch_shift(augmented_y, sr, n_steps)
+            augmented_y = librosa.effects.pitch_shift(y = augmented_y, sr = sr, n_steps=n_steps)
 
         # Add background noise
         if noise_files and random.choice([True, False]):
-            noise_file = random.choice(noise_files)
-            noise, _ = librosa.load(noise_file, sr=sr)
-            noise = librosa.util.fix_length(noise, len(augmented_y))
-            augmented_y = augmented_y + 0.1 * noise  
+            noise_file = np.random.choice(noise_files)
+            try:
+                noise, _ = librosa.load(noise_file, sr=sr)
+                if len(noise) < len(augmented_y):
+                    noise = np.pad(noise, (0, len(augmented_y) - len(noise)), mode='wrap')
+                augmented_y += 0.1 * noise[:len(augmented_y)]
+            except FileNotFoundError:
+                MISSING_FILES.append(noise_file)
+                continue
+            except Exception as e:
+                print(f"Error processing noise file {noise_file}: {e}")
+                MISSING_FILES.append(noise_file)
+                continue
 
         # Save augmented file
         output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(file_path))[0]}_aug{i}.wav")
@@ -49,9 +61,9 @@ def augment_audio(file_path, output_dir, num_copies=10, noise_files=None):
         print(f"Generated augmented file: {output_file}")
 
 # Create augmented dataset
-def create_augmented_dataset(source_dir, target_dir, augmentation_fraction=0.3, val_test_split=0.15, num_copies=5):
+def create_augmented_dataset(source_dir, target_dir, augmentation_fraction=0.25, val_test_split=0.15):
     """
-    Creates an augmented dataset with 30% augmentation in each directory. 
+    Creates an augmented dataset with 25% augmentation in each directory.
     15% of both augmented and unaugmented files are added to validation and test sets.
 
     Args:
@@ -93,7 +105,7 @@ def create_augmented_dataset(source_dir, target_dir, augmentation_fraction=0.3, 
 
         # Augment files and save to the train directory
         for file in selected_files:
-            augment_audio(file, dest_train_dir, num_copies=num_copies, noise_files=noise_files)
+            augment_audio(file, dest_train_dir, noise_files=noise_files)
 
         # Combine augmented and unaugmented files
         all_files = files + [os.path.join(dest_train_dir, f) for f in os.listdir(dest_train_dir) if f.endswith('.wav')]
@@ -105,19 +117,19 @@ def create_augmented_dataset(source_dir, target_dir, augmentation_fraction=0.3, 
 
         # Move validation and test files
         for file in val_files:
-            shutil.move(file, os.path.join(dest_val_dir, os.path.basename(file)))
+            shutil.copy(file, os.path.join(dest_val_dir, os.path.basename(file)))
         for file in test_files:
-            shutil.move(file, os.path.join(dest_test_dir, os.path.basename(file)))
+            shutil.copy(file, os.path.join(dest_test_dir, os.path.basename(file)))
 
         # Copy remaining files to the train directory
         remaining_files = [f for f in all_files if f not in val_files and f not in test_files]
         for file in remaining_files:
             if not os.path.exists(os.path.join(dest_train_dir, os.path.basename(file))):
-                shutil.move(file, dest_train_dir)
+                shutil.copy(file, dest_train_dir)
 
         logger.info(f"Processed {directory}: {len(val_files)} val, {len(test_files)} test, {len(remaining_files)} train.")
 
 if __name__ == "__main__":
     source_directory = "google_12"
     target_directory = "google_12_augmented"
-    create_augmented_dataset(source_directory, target_directory, augmentation_fraction=0.3, val_test_split=0.15, num_copies=10)
+    create_augmented_dataset(source_directory, target_directory, val_test_split=0.15)

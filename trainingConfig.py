@@ -10,10 +10,10 @@ class ModelOptions:
     def __init__(self):
         self.architecture = "FastGRNN"
         self.num_layers = 3
-        self.hidden_units = 512
-        self.hidden_units1 = 256
-        self.hidden_units2 = 128
-        self.hidden_units3 = None
+        self.hidden_units = None
+        self.hidden_units1 = 512
+        self.hidden_units2 = 256
+        self.hidden_units3 = 128
         self.filename = ""
         self.wRank = None
         self.uRank = None
