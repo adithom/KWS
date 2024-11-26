@@ -1,10 +1,8 @@
 import argparse
-import os
 import wave
 from array import array
 from collections import Counter
 from queue import Queue
-from struct import pack
 from sys import byteorder
 from threading import Thread
 
@@ -12,7 +10,7 @@ import numpy as np
 import pyaudio
 import torch
 from torch.nn.functional import softmax
-from mfccProcessor import MFCCProcessor
+from data_pipeline.mfccProcessor import MFCCProcessor
 from trainClassifier import create_model
 from trainingConfig import TrainingConfig
 

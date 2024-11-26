@@ -8,7 +8,7 @@ import torch.optim as optim
 import torch.onnx
 
 import utils
-from dataPipeline.preprocessing import create_dataloaders
+from data_pipeline.preprocessing import create_dataloaders
 from trainingConfig import TrainingConfig
 from model import *
 

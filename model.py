@@ -218,10 +218,10 @@ def get_model_class(inheritance_class=nn.Module):
                                            hiddenState=self.hidden_states[l])
 
                     self.hidden_states[l] = model_output.detach()[-1, :, :]
-                    if self.tracking:
-                        weights = rnn.getVars()
-                        model_output = onnx_exportable_rnn(rnn_in, weights, rnn.cell,
-                                                           output=model_output)
+                    # if self.tracking:
+                    #     weights = rnn.getVars()
+                    #     model_output = onnx_exportable_rnn(rnn_in, weights, rnn.cell,
+                    #                                        output=model_output)
                     rnn_in = model_output
 
             if self.linear:

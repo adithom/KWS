@@ -430,6 +430,27 @@ class FastGRNNBatchNormCell(RNNCell):
         Vars.extend([self.zeta, self.nu])
         return Vars
 
+    def sparsify(self):
+        """
+        Apply sparsification to W and U matrices using hard thresholding.
+        """
+        mats = self.getVars()
+        endW = self._num_W_matrices
+        endU = endW + self._num_U_matrices
+        for i in range(0, endW):  # Apply sparsity to W matrices
+            mats[i].data = utils.hardThreshold(mats[i], self._wSparsity)
+        for i in range(endW, endU):  # Apply sparsity to U matrices
+            mats[i].data = utils.hardThreshold(mats[i], self._uSparsity)
+
+    def sparsifyWithSupport(self):
+        """
+        Retain sparsity structure during sparse retraining.
+        """
+        mats = self.getVars()
+        endU = self._num_W_matrices + self._num_U_matrices
+        for i in range(0, endU):  # Support-based thresholding for W and U
+            mats[i].data = utils.supportBasedThreshold(mats[i], self.oldmats[i])
+
 class FastGRNNCUDACell(RNNCell):
     '''
     A CUDA implementation of FastGRNN Cell with Full Rank Support
@@ -711,6 +732,8 @@ class FastGRNNBatchNorm(nn.Module):
     def train(self, mode=True):
         self.training = mode
         super(FastGRNNBatchNorm, self).train(mode)
+
+
 
 class FastGRNNCUDA(nn.Module):
     """

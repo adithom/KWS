@@ -1,13 +1,4 @@
-import sys
-import os
-import math
-import numpy as np
-import torch
-import torch.nn.functional as F
-import torch.optim as optim
-import subprocess
-import glob
-from mfccProcessor import MFCCProcessor
+from data_pipeline.mfccProcessor import MFCCProcessor
 import matplotlib.pyplot as plt
 
 # def findCUDA():
@@ -41,9 +32,7 @@ import matplotlib.pyplot as plt
 # print(torch.version.cuda)
 
 processor = MFCCProcessor()
-features = processor.compute_features('./google_speech/bed/0a7c2a8d_nohash_0.wav', "mfcc")
-feature1 = processor.compute_features('./google_speech/bed/0a7c2a8d_nohash_0.wav', "delta")
-feature2 = processor.compute_features('./google_speech/bed/0a7c2a8d_nohash_0.wav', "delta_delta")
+features = processor.compute_features('../google_speech/bed/0a7c2a8d_nohash_0.wav')
 
 if features is not None:
     print(f"MFCC shape: {features.shape}")
@@ -56,35 +45,6 @@ if features is not None:
     plt.ylabel('MFCC Coefficients')
     plt.xlabel('Time Frames')
     plt.show()
-else:
-    print("MFCC computation failed.")
-
-if feature1 is not None:
-    print(f"MFCC shape: {feature1.shape}")
-
-    # Render the MFCC as a heatmap
-    plt.figure(figsize=(10, 6))
-    plt.imshow(feature1, aspect='auto', origin='lower', cmap='viridis')
-    plt.colorbar(label='Amplitude')
-    plt.title('MFCC Features')
-    plt.ylabel('MFCC Coefficients')
-    plt.xlabel('Time Frames')
-    plt.show()
-else:
-    print("MFCC computation failed.")
-
-if feature2 is not None:
-    print(f"MFCC shape: {feature2.shape}")
-
-    # Render the MFCC as a heatmap
-    plt.figure(figsize=(10, 6))
-    plt.imshow(feature2, aspect='auto', origin='lower', cmap='viridis')
-    plt.colorbar(label='Amplitude')
-    plt.title('MFCC Features')
-    plt.ylabel('MFCC Coefficients')
-    plt.xlabel('Time Frames')
-    plt.show()
-
 else:
     print("MFCC computation failed.")
 
